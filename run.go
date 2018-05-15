@@ -44,13 +44,8 @@ func (x *RunCommand) Execute(args []string) error {
 }
 
 func start() {
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/settings/", makeHandler(settingsHandler))
-	http.HandleFunc("/save/", saveHandler)
-	http.HandleFunc("/create/", createHandler)
-	http.HandleFunc("/actions/activity", actionActivityHandler)
-
-	SetMsgHandler()
+	setAppHandler()
+	setMsgHandler()
 
 	fmt.Println(http.ListenAndServe(config.HttpServer.Listen, nil))
 }

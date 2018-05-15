@@ -17,10 +17,10 @@ fmt:
 
 install: fmt
 	@echo "==> Running go get"
-	@go get -v -u gopkg.in/yaml.v2 github.com/op/go-logging github.com/jinzhu/gorm \
-	github.com/jinzhu/gorm/dialects/postgres github.com/retailcrm/api-client-go/v5 \
-	github.com/golang-migrate/migrate github.com/golang-migrate/migrate/database/postgres \
-	github.com/jessevdk/go-flags github.com/go-telegram-bot-api/telegram-bot-api
+	$(eval DEPS:=$(shell cd $(SRC_DIR) \
+	 	&& go list -f '{{join .Imports "\n"}}{{ "\n" }}{{join .TestImports "\n"}}' ./... \
+		| sort | uniq | tr '\r' '\n' | paste -sd ' ' -))
+	@go get -d -v $(DEPS)
 
 build: install
 	@echo "==> Building"

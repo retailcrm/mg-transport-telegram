@@ -8,7 +8,6 @@ create table connection
   api_url    text,
   created_at timestamp with time zone,
   updated_at timestamp with time zone,
-  number     text,
   active     boolean
 );
 

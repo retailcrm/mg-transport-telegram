@@ -14,7 +14,6 @@ type TransportConfig struct {
 	Database   DatabaseConfig   `yaml:"database"`
 	SentryDSN  string           `yaml:"sentry_dsn"`
 	HttpServer HttpServerConfig `yaml:"http_server"`
-	Migration  Migration        `yaml:"migration"`
 }
 
 // DatabaseConfig struct

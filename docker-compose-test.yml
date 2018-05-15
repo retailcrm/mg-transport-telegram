@@ -1,0 +1,21 @@
+version: '2.1'
+
+services:
+    postgres_test:
+        image: postgres:9.6
+        environment:
+            POSTGRES_USER: mg_telegram_test
+            POSTGRES_PASSWORD: mg_telegram_test
+            POSTGRES_DATABASE: mg_telegram_test
+        ports:
+            - ${POSTGRES_ADDRESS:-127.0.0.1:5450}:${POSTGRES_PORT:-5450}
+        command: -p ${POSTGRES_PORT:-5450}
+
+    mg_telegram_test:
+        image: golang:1.9.3-stretch
+        working_dir: /mg_manager
+        user: ${UID:-1000}:${GID:-1000}
+        volumes:
+            - ./:/mg_manager/
+        links:
+            - postgres_test

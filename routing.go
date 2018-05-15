@@ -21,6 +21,14 @@ type Response struct {
 	Error   string `json:"error"`
 }
 
+func setAppHandler() {
+	http.HandleFunc("/", connectHandler)
+	http.HandleFunc("/settings/", makeHandler(settingsHandler))
+	http.HandleFunc("/save/", saveHandler)
+	http.HandleFunc("/create/", createHandler)
+	http.HandleFunc("/actions/activity", activityHandler)
+}
+
 func renderTemplate(w http.ResponseWriter, tmpl string, c interface{}) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", c)
 	if err != nil {
@@ -39,7 +47,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+func connectHandler(w http.ResponseWriter, r *http.Request) {
 	p := Connection{}
 	renderTemplate(w, "home", &p)
 }
@@ -65,6 +73,11 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bot, err := GetBotInfo(b.Token)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	b.Name = GetNameBot(bot)
 
 	err = b.createBot()
@@ -90,7 +103,7 @@ func deleteBotHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func mappingBotHandler(w http.ResponseWriter, r *http.Request) {
+func mappingHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -119,6 +132,10 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if p.ID == 0 {
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
 	}
 
 	bots := Bots{}
@@ -239,7 +256,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("/settings/" + c.ClientID))
 }
 
-func actionActivityHandler(w http.ResponseWriter, r *http.Request) {
+func activityHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	res := Response{Success: false}
 
@@ -289,7 +306,7 @@ func validate(r *http.Request, c Connection) string {
 		return "set correct crm url"
 	}
 
-	if res, _ := regexp.MatchString(`https:\/\/?[\da-z\.-]+\.retailcrm.ru`, c.APIURL); !res {
+	if res, _ := regexp.MatchString(`https:\/\/?[\da-z\.-]+\.(retailcrm\.(ru|pro)|ecomlogic\.com)`, c.APIURL); !res {
 		return "set correct crm url"
 	}
 
