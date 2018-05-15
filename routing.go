@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/getsentry/raven-go"
 	"github.com/retailcrm/api-client-go/v5"
 )
 
@@ -32,6 +33,7 @@ func setAppHandler() {
 func renderTemplate(w http.ResponseWriter, tmpl string, c interface{}) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", c)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -61,19 +63,18 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	if b.Token == "" {
 		http.Error(w, "set bot token", http.StatusInternalServerError)
-		fmt.Println("set bot token")
 		return
 	}
 
 	cl, _ := getByToken(b.Token)
 	if cl.ID != 0 {
 		http.Error(w, "bot already created", http.StatusInternalServerError)
-		fmt.Println("bot already created")
 		return
 	}
 
 	bot, err := GetBotInfo(b.Token)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -82,6 +83,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = b.createBot()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -96,6 +98,7 @@ func deleteBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := b.deleteBot()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -106,7 +109,8 @@ func deleteBotHandler(w http.ResponseWriter, r *http.Request) {
 func mappingHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println(err.Error())
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err)
 		return
 	}
 
@@ -114,13 +118,15 @@ func mappingHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
-		fmt.Println(err.Error())
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err)
 		return
 	}
 
 	err = createSiteBots(rec)
 	if err != nil {
-		fmt.Println(err.Error())
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err)
 		return
 	}
 
@@ -130,12 +136,13 @@ func mappingHandler(w http.ResponseWriter, r *http.Request) {
 func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 	p, err := get(uid)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if p.ID == 0 {
-		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+		http.Redirect(w, r, "/", http.StatusFound)
 	}
 
 	bots := Bots{}
@@ -167,12 +174,13 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	erv := validate(r, *c)
 	if erv != "" {
 		http.Error(w, erv, http.StatusBadRequest)
-		fmt.Println(erv)
+		logger.Error(erv)
 		return
 	}
 
 	err := c.save()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -191,14 +199,14 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	erv := validate(r, *c)
 	if erv != "" {
 		http.Error(w, erv, http.StatusBadRequest)
-		fmt.Println(erv)
+		logger.Error(erv)
 		return
 	}
 
 	cl, _ := getByUrlCrm(c.APIURL)
 	if cl.ID != 0 {
 		http.Error(w, "connection already created", http.StatusBadRequest)
-		fmt.Println()
+		logger.Error(erv)
 		return
 	}
 
@@ -206,18 +214,18 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 	cr, _, errors := client.APICredentials()
 	if errors.RuntimeErr != nil {
-		fmt.Println(errors.RuntimeErr)
+		logger.Error(errors.RuntimeErr)
 		return
 	}
 
 	if !cr.Success {
 		http.Error(w, "set correct crm url or key", http.StatusBadRequest)
-		fmt.Println("set correct crm url or key")
 		return
 	}
 
 	err := c.create()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -245,11 +253,13 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	_, status, errors := client.IntegrationModuleEdit(integration)
 
 	if errors.RuntimeErr != nil {
-		fmt.Printf("%v", errors.Error())
+		logger.Error(errors.RuntimeErr)
+		return
 	}
 
 	if status >= http.StatusBadRequest {
-		fmt.Printf("%v", errors.ApiError())
+		logger.Error(errors.ApiErr)
+		return
 	}
 
 	w.WriteHeader(http.StatusFound)
@@ -269,7 +279,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println(err.Error())
+		raven.CaptureErrorAndWait(err, nil)
 		res.Error = "incorrect data"
 		jsonString, _ := json.Marshal(res)
 		w.Write(jsonString)
@@ -280,7 +290,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
-		fmt.Println(err.Error())
+		raven.CaptureErrorAndWait(err, nil)
 		res.Error = "incorrect data"
 		jsonString, _ := json.Marshal(res)
 		w.Write(jsonString)
@@ -288,7 +298,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := rec.setActive(); err != nil {
-		fmt.Println(err.Error())
+		raven.CaptureErrorAndWait(err, nil)
 		res.Error = "incorrect data"
 		jsonString, _ := json.Marshal(res)
 		w.Write(jsonString)

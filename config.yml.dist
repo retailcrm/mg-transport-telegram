@@ -3,3 +3,7 @@ database:
 
 http_server:
   listen: :3001
+
+sentry_dsn: ~
+
+log_level: 5

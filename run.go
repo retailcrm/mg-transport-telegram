@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"os"
@@ -47,5 +46,5 @@ func start() {
 	setAppHandler()
 	setMsgHandler()
 
-	fmt.Println(http.ListenAndServe(config.HttpServer.Listen, nil))
+	http.ListenAndServe(config.HttpServer.Listen, nil)
 }

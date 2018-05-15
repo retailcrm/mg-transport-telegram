@@ -30,10 +30,6 @@ type HttpServerConfig struct {
 	Listen string `yaml:"listen"`
 }
 
-type Migration struct {
-	Dir string `yaml:"dir"`
-}
-
 // LoadConfig read configuration file
 func LoadConfig(path string) *TransportConfig {
 	var err error

@@ -9,6 +9,7 @@ func createSiteBots(s []SiteBot) error {
 
 	defer func() {
 		if r := recover(); r != nil {
+			logger.Warning(r)
 			tx.Rollback()
 		}
 	}()
