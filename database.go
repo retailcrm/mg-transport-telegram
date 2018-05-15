@@ -30,9 +30,6 @@ func NewDb(config *TransportConfig) *Orm {
 	db.SingularTable(true)
 	db.LogMode(config.Database.Logging)
 
-	//db.AutoMigrate(&Connection{})
-	db.AutoMigrate(&SiteBot{})
-
 	setCreatedAt := func(scope *gorm.Scope) {
 		if scope.HasColumn("CreatedAt") {
 			scope.SetColumn("CreatedAt", time.Now())

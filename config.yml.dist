@@ -3,6 +3,3 @@ database:
 
 http_server:
   listen: :3001
-
-migration:
-  dir: ./migrations/

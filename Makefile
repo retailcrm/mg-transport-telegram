@@ -11,14 +11,9 @@ endif
 
 export GOPATH := $(GOPATH):$(ROOT_DIR)
 
-build: install
-	@echo "==> Building"
-	@go build -o $(BIN) -ldflags "-X common.build=${REVISION}" .
-	@echo $(BIN)
-
-run: build
-	@echo "==> Running"
-	@${BIN}
+fmt:
+	@echo "==> Running gofmt"
+	@gofmt -l -s -w $(SRC_DIR)
 
 install: fmt
 	@echo "==> Running go get"
@@ -26,9 +21,15 @@ install: fmt
 	github.com/jinzhu/gorm/dialects/postgres github.com/retailcrm/api-client-go/v5 \
 	github.com/golang-migrate/migrate github.com/golang-migrate/migrate/database/postgres \
 	github.com/jessevdk/go-flags github.com/go-telegram-bot-api/telegram-bot-api
-	@gofmt -l -s -w $(SRC_DIR)
 
+build: install
+	@echo "==> Building"
+	@go build -o $(BIN) -ldflags "-X common.build=${REVISION}" .
+	@echo $(BIN)
 
-fmt:
-	@echo "==> Running gofmt"
-	@gofmt -l -s -w $(SRC_DIR)
+migrate: build
+	@${BIN} --config $(CONFIG_FILE) migrate -p ./migrations/
+
+run: migrate
+	@echo "==> Running"
+	@${BIN} --config $(CONFIG_FILE) run

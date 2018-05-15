@@ -1,34 +1,24 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"os"
 
-	"github.com/golang-migrate/migrate"
-	_ "github.com/golang-migrate/migrate/database/postgres"
-	_ "github.com/golang-migrate/migrate/source/file"
+	"github.com/jessevdk/go-flags"
 )
 
-var (
-	config = LoadConfig("config.yml")
-	orm    = NewDb(config)
-)
+type Options struct {
+	Config string `short:"c" long:"config" default:"config.yml" description:"Path to configuration file"`
+}
+
+var options Options
+var parser = flags.NewParser(&options, flags.Default)
 
 func main() {
-	m, err := migrate.New("file://"+config.Migration.Dir, config.Database.Connection)
-	if err != nil {
-		fmt.Printf("Migrations path %s does not exist or permission denied\n", config.Migration.Dir)
+	if _, err := parser.Parse(); err != nil {
+		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+			os.Exit(0)
+		} else {
+			os.Exit(1)
+		}
 	}
-	m.Up()
-	m.Close()
-
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/settings/", makeHandler(settingsHandler))
-	http.HandleFunc("/save/", saveHandler)
-	http.HandleFunc("/create/", createHandler)
-	http.HandleFunc("/actions/activity", actionActivityHandler)
-
-	SetMsgHandler()
-
-	fmt.Println(http.ListenAndServe(config.HttpServer.Listen, nil))
 }
