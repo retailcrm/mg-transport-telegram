@@ -1,7 +1,6 @@
 package main
 
-// SiteBot methods
-func createSiteBots(s []SiteBot) error {
+func createMapping(s []SiteBot) error {
 	tx := orm.DB.Begin()
 	if tx.Error != nil {
 		return tx.Error
@@ -24,35 +23,33 @@ func createSiteBots(s []SiteBot) error {
 	return tx.Commit().Error
 }
 
-// Connection methods
-func get(uid string) (*Connection, error) {
+func getConnection(uid string) (*Connection, error) {
 	var connection Connection
 	orm.DB.First(&connection, "client_id = ?", uid)
 
 	return &connection, nil
 }
 
-func getByUrlCrm(urlCrm string) (*Connection, error) {
+func getConnectionByUrlCrm(urlCrm string) (*Connection, error) {
 	var connection Connection
 	orm.DB.First(&connection, "api_url = ?", urlCrm)
 
 	return &connection, nil
 }
 
-func (c *Connection) setActive() error {
+func (c *Connection) setConnectionActivity() error {
 	return orm.DB.Model(c).Where("client_id = ?", c.ClientID).Update("Active", c.Active).Error
 }
 
-func (c *Connection) create() error {
+func (c *Connection) createConnection() error {
 	return orm.DB.Create(c).Error
 }
 
-func (c *Connection) save() error {
+func (c *Connection) saveConnection() error {
 	return orm.DB.Model(c).Where("client_id = ?", c.ClientID).Update(c).Error
 }
 
-// Bot methods
-func getByToken(token string) (*Bot, error) {
+func getBotByToken(token string) (*Bot, error) {
 	var bot Bot
 	orm.DB.First(&bot, "token = ?", token)
 

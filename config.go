@@ -10,10 +10,11 @@ import (
 
 // TransportConfig struct
 type TransportConfig struct {
+	AppName    string           `yaml:"app_name"`
 	LogLevel   logging.Level    `yaml:"log_level"`
 	Database   DatabaseConfig   `yaml:"database"`
 	SentryDSN  string           `yaml:"sentry_dsn"`
-	HttpServer HttpServerConfig `yaml:"http_server"`
+	HTTPServer HTTPServerConfig `yaml:"http_server"`
 }
 
 // DatabaseConfig struct
@@ -26,7 +27,8 @@ type DatabaseConfig struct {
 	ConnectionLifetime int    `yaml:"connection_lifetime"`
 }
 
-type HttpServerConfig struct {
+// HttpServerConfig struct
+type HTTPServerConfig struct {
 	Listen string `yaml:"listen"`
 }
 

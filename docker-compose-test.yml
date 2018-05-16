@@ -13,9 +13,9 @@ services:
 
     mg_telegram_test:
         image: golang:1.9.3-stretch
-        working_dir: /mg_manager
+        working_dir: /mg_telegram
         user: ${UID:-1000}:${GID:-1000}
         volumes:
-            - ./:/mg_manager/
+            - ./:/mg_telegram/
         links:
             - postgres_test

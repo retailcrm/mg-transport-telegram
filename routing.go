@@ -17,6 +17,7 @@ var (
 	validPath = regexp.MustCompile("^/(save|settings)/([a-zA-Z0-9]+)$")
 )
 
+// Response struct
 type Response struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error"`
@@ -66,7 +67,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cl, _ := getByToken(b.Token)
+	cl, _ := getBotByToken(b.Token)
 	if cl.ID != 0 {
 		http.Error(w, "bot already created", http.StatusInternalServerError)
 		return
@@ -79,7 +80,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b.Name = GetNameBot(bot)
+	b.Name = GetBotName(bot)
 
 	err = b.createBot()
 	if err != nil {
@@ -110,7 +111,6 @@ func mappingHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(err)
 		return
 	}
 
@@ -119,14 +119,12 @@ func mappingHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(err)
 		return
 	}
 
-	err = createSiteBots(rec)
+	err = createMapping(rec)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(err)
 		return
 	}
 
@@ -134,7 +132,7 @@ func mappingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
-	p, err := get(uid)
+	p, err := getConnection(uid)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -178,7 +176,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := c.save()
+	err := c.saveConnection()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -203,10 +201,9 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cl, _ := getByUrlCrm(c.APIURL)
+	cl, _ := getConnectionByUrlCrm(c.APIURL)
 	if cl.ID != 0 {
 		http.Error(w, "connection already created", http.StatusBadRequest)
-		logger.Error(erv)
 		return
 	}
 
@@ -223,7 +220,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := c.create()
+	err := c.createConnection()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -231,34 +228,39 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	integration := v5.IntegrationModule{
-		Code:            "test-123",
-		IntegrationCode: "test-123",
+		Code:            config.AppName,
+		IntegrationCode: config.AppName,
 		Active:          true,
-		Name:            "test-telegram",
+		Name:            config.AppName,
 		ClientID:        c.ClientID,
-		BaseURL:         "https://test.te",
+		BaseURL: fmt.Sprintf(
+			"https://%s",
+			r.Host,
+		),
 		AccountURL: fmt.Sprintf(
-			"%s/settings/%s",
-			"https://test.te",
+			"https://%s/settings/%s",
+			r.Host,
 			c.ClientID,
 		),
 		Actions: map[string]string{"activity": "/actions/activity"},
-		//Integrations: &v5.Integrations{
-		//	MgTransport: &v5.MgTransport{
-		//		WebhookUrl: "https://test.te/telegram",
-		//	},
-		//},
+		Integrations: &v5.Integrations{
+			MgTransport: &v5.MgTransport{
+				WebhookUrl: fmt.Sprintf(
+					"https://%s/telegram",
+					r.Host,
+				),
+			},
+		},
 	}
 
 	_, status, errors := client.IntegrationModuleEdit(integration)
-
 	if errors.RuntimeErr != nil {
 		logger.Error(errors.RuntimeErr)
 		return
 	}
 
 	if status >= http.StatusBadRequest {
-		logger.Error(errors.ApiErr)
+		logger.Error(errors.ApiErr, c.APIURL)
 		return
 	}
 
@@ -297,7 +299,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := rec.setActive(); err != nil {
+	if err := rec.setConnectionActivity(); err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		res.Error = "incorrect data"
 		jsonString, _ := json.Marshal(res)

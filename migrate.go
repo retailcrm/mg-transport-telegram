@@ -12,14 +12,17 @@ func init() {
 	parser.AddCommand("migrate",
 		"Migrate database to defined migrations version",
 		"Migrate database to defined migrations version.",
-		&MigrateCommand{})
+		&MigrateCommand{},
+	)
 }
 
+// MigrateCommand struct
 type MigrateCommand struct {
 	Version string `short:"v" long:"version" default:"up" description:"Migrate to defined migrations version. Allowed: up, down, next, prev and integer value."`
 	Path    string `short:"p" long:"path" default:"" description:"Path to migrations files."`
 }
 
+// Execute command
 func (x *MigrateCommand) Execute(args []string) error {
 	config := LoadConfig(options.Config)
 
@@ -32,6 +35,7 @@ func (x *MigrateCommand) Execute(args []string) error {
 	return err
 }
 
+// Migrate method
 func Migrate(database string, version string, path string) error {
 	m, err := migrate.New("file://"+path, database)
 	if err != nil {

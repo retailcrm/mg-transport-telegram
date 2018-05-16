@@ -21,7 +21,7 @@ func GetBotInfo(token string) (*tgbotapi.BotAPI, error) {
 	return bot, nil
 }
 
-// Get name bot
-func GetNameBot(bot *tgbotapi.BotAPI) string {
+// Get bot name
+func GetBotName(bot *tgbotapi.BotAPI) string {
 	return bot.Self.FirstName
 }

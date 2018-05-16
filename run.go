@@ -14,17 +14,21 @@ import (
 var (
 	config = LoadConfig("config.yml")
 	orm    = NewDb(config)
+	logger = newLogger()
 )
 
 func init() {
 	parser.AddCommand("run",
-		"Run Message Gateway manager",
-		"Run Message Gateway manager.",
-		&RunCommand{})
+		"Run "+config.AppName,
+		"Run "+config.AppName,
+		&RunCommand{},
+	)
 }
 
+// RunCommand struct
 type RunCommand struct{}
 
+// Execute command
 func (x *RunCommand) Execute(args []string) error {
 	go start()
 
@@ -46,5 +50,5 @@ func start() {
 	setAppHandler()
 	setMsgHandler()
 
-	http.ListenAndServe(config.HttpServer.Listen, nil)
+	http.ListenAndServe(config.HTTPServer.Listen, nil)
 }
