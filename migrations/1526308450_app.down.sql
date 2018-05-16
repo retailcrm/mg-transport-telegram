@@ -1,1 +1,1 @@
-DROP TABLE site_bot;
+DROP TABLE mapping;

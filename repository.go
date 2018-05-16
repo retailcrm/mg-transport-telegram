@@ -1,6 +1,6 @@
 package main
 
-func createMapping(s []SiteBot) error {
+func createMapping(s []Mapping) error {
 	tx := orm.DB.Begin()
 	if tx.Error != nil {
 		return tx.Error
@@ -60,8 +60,8 @@ func (b *Bot) createBot() error {
 	return orm.DB.Create(b).Error
 }
 
-func (b *Bot) deleteBot() error {
-	return orm.DB.Where("token = ?", b.Token).Delete(b).Error
+func (b *Bot) setBotActivity() error {
+	return orm.DB.Model(b).Where("token = ?", b.Token).Update("Active", !b.Active).Error
 }
 
 func (b *Bots) getBotsByClientID(uid string) error {

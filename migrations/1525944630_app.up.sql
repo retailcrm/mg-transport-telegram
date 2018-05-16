@@ -4,6 +4,7 @@ create table bot
     constraint bot_pkey
     primary key,
   client_id  text,
+  channel  text,
   token      text,
   name       text,
   created_at timestamp with time zone,

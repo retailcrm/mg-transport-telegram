@@ -19,8 +19,8 @@ var (
 
 func init() {
 	parser.AddCommand("run",
-		"Run "+config.AppName,
-		"Run "+config.AppName,
+		"Run mg-telegram",
+		"Run mg-telegram.",
 		&RunCommand{},
 	)
 }

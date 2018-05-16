@@ -8,7 +8,7 @@ import (
 
 func setTransportRoutes() {
 	http.HandleFunc("/add-bot/", addBotHandler)
-	http.HandleFunc("/del-bot/", deleteBotHandler)
+	http.HandleFunc("/activity-bot/", activityBotHandler)
 	http.HandleFunc("/map-bot/", mappingHandler)
 }
 

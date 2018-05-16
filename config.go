@@ -10,7 +10,6 @@ import (
 
 // TransportConfig struct
 type TransportConfig struct {
-	AppName    string           `yaml:"app_name"`
 	LogLevel   logging.Level    `yaml:"log_level"`
 	Database   DatabaseConfig   `yaml:"database"`
 	SentryDSN  string           `yaml:"sentry_dsn"`
@@ -29,6 +28,7 @@ type DatabaseConfig struct {
 
 // HTTPServerConfig struct
 type HTTPServerConfig struct {
+	Host   string `yaml:"host"`
 	Listen string `yaml:"listen"`
 }
 

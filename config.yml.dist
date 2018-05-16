@@ -2,6 +2,7 @@ database:
   connection: postgres://mg_telegram:mg_telegram@postgres:5432/mg_telegram?sslmode=disable
 
 http_server:
+  host: ~
   listen: :3001
 
 sentry_dsn: ~

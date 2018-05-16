@@ -2,4 +2,9 @@ database:
   connection: postgres://mg_telegram_test:mg_telegram_test@postgres_test:5450/mg_telegram_test?sslmode=disable
 
 http_server:
+  host: ~
   listen: :3001
+
+sentry_dsn: ~
+
+log_level: 5

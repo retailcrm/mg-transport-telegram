@@ -6,6 +6,8 @@ create table connection
   client_id  text,
   api_key    text,
   api_url    text,
+  mg_url    text,
+  mg_token    text,
   created_at timestamp with time zone,
   updated_at timestamp with time zone,
   active     boolean

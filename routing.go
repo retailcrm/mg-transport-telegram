@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -56,10 +57,18 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addBotHandler(w http.ResponseWriter, r *http.Request) {
-	b := &Bot{
-		ClientID: string([]byte(r.FormValue("clientId"))),
-		Token:    string([]byte(r.FormValue("bot_token"))),
-		Active:   true,
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var b Bot
+
+	err = json.Unmarshal(body, &b)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if b.Token == "" {
@@ -75,7 +84,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	bot, err := GetBotInfo(b.Token)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err.Error(), b.Token)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -92,12 +101,22 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func deleteBotHandler(w http.ResponseWriter, r *http.Request) {
-	b := &Bot{
-		Token: string([]byte(r.FormValue("token"))),
+func activityBotHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	err := b.deleteBot()
+	var b Bot
+
+	err = json.Unmarshal(body, &b)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = b.setBotActivity()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -114,7 +133,7 @@ func mappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var rec []SiteBot
+	var rec []Mapping
 
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
@@ -163,20 +182,28 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
-	c := &Connection{
-		ClientID: string([]byte(r.FormValue("clientId"))),
-		APIKEY:   string([]byte(r.FormValue("api_key"))),
-		APIURL:   string([]byte(r.FormValue("api_url"))),
-	}
-
-	erv := validate(r, *c)
-	if erv != "" {
-		http.Error(w, erv, http.StatusBadRequest)
-		logger.Error(erv)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err := c.saveConnection()
+	var c Connection
+
+	err = json.Unmarshal(body, &c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = validate(c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		logger.Error(err)
+		return
+	}
+
+	err = c.saveConnection()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -194,10 +221,10 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		APIKEY:   string([]byte(r.FormValue("api_key"))),
 	}
 
-	erv := validate(r, *c)
-	if erv != "" {
-		http.Error(w, erv, http.StatusBadRequest)
-		logger.Error(erv)
+	err := validate(*c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		logger.Error(err)
 		return
 	}
 
@@ -220,7 +247,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := c.createConnection()
+	err = c.createConnection()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -228,26 +255,23 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	integration := v5.IntegrationModule{
-		Code:            config.AppName,
-		IntegrationCode: config.AppName,
+		Code:            transport,
+		IntegrationCode: transport,
 		Active:          true,
-		Name:            config.AppName,
+		Name:            "MG Telegram",
 		ClientID:        c.ClientID,
-		BaseURL: fmt.Sprintf(
-			"https://%s",
-			r.Host,
-		),
+		BaseURL:         config.HTTPServer.Host,
 		AccountURL: fmt.Sprintf(
-			"https://%s/settings/%s",
-			r.Host,
+			"%s/settings/%s",
+			config.HTTPServer.Host,
 			c.ClientID,
 		),
 		Actions: map[string]string{"activity": "/actions/activity"},
 		Integrations: &v5.Integrations{
 			MgTransport: &v5.MgTransport{
 				WebhookUrl: fmt.Sprintf(
-					"https://%s/webhook",
-					r.Host,
+					"%s/webhook",
+					config.HTTPServer.Host,
 				),
 			},
 		},
@@ -312,15 +336,14 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonString)
 }
 
-func validate(r *http.Request, c Connection) string {
-	r.ParseForm()
-	if len(r.Form) == 0 {
-		return "set correct crm url"
+func validate(c Connection) error {
+	if c.APIURL != "" || c.APIKEY != "" {
+		return errors.New("missing crm url or key")
 	}
 
 	if res, _ := regexp.MatchString(`https:\/\/?[\da-z\.-]+\.(retailcrm\.(ru|pro)|ecomlogic\.com)`, c.APIURL); !res {
-		return "set correct crm url"
+		return errors.New("set correct crm url")
 	}
 
-	return ""
+	return nil
 }
