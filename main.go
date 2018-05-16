@@ -7,6 +7,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
+// Options struct
 type Options struct {
 	Config string `short:"c" long:"config" default:"config.yml" description:"Path to configuration file"`
 }

@@ -22,7 +22,7 @@ type MigrateCommand struct {
 	Path    string `short:"p" long:"path" default:"" description:"Path to migrations files."`
 }
 
-// Execute command
+// Execute method
 func (x *MigrateCommand) Execute(args []string) error {
 	config := LoadConfig(options.Config)
 
@@ -35,7 +35,7 @@ func (x *MigrateCommand) Execute(args []string) error {
 	return err
 }
 
-// Migrate method
+// Migrate funcion
 func Migrate(database string, version string, path string) error {
 	m, err := migrate.New("file://"+path, database)
 	if err != nil {

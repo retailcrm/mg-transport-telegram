@@ -30,7 +30,7 @@ func getConnection(uid string) (*Connection, error) {
 	return &connection, nil
 }
 
-func getConnectionByUrlCrm(urlCrm string) (*Connection, error) {
+func getConnectionByURL(urlCrm string) (*Connection, error) {
 	var connection Connection
 	orm.DB.First(&connection, "api_url = ?", urlCrm)
 
@@ -64,6 +64,6 @@ func (b *Bot) deleteBot() error {
 	return orm.DB.Where("token = ?", b.Token).Delete(b).Error
 }
 
-func (b *Bots) getBotsByClientId(uid string) error {
+func (b *Bots) getBotsByClientID(uid string) error {
 	return orm.DB.Where("client_id = ?", uid).Find(b).Error
 }

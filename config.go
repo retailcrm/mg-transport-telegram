@@ -27,7 +27,7 @@ type DatabaseConfig struct {
 	ConnectionLifetime int    `yaml:"connection_lifetime"`
 }
 
-// HttpServerConfig struct
+// HTTPServerConfig struct
 type HTTPServerConfig struct {
 	Listen string `yaml:"listen"`
 }

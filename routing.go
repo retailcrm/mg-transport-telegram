@@ -23,7 +23,7 @@ type Response struct {
 	Error   string `json:"error"`
 }
 
-func setAppHandler() {
+func setWrapperRoutes() {
 	http.HandleFunc("/", connectHandler)
 	http.HandleFunc("/settings/", makeHandler(settingsHandler))
 	http.HandleFunc("/save/", saveHandler)
@@ -144,7 +144,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 	}
 
 	bots := Bots{}
-	bots.getBotsByClientId(uid)
+	bots.getBotsByClientID(uid)
 
 	client := v5.New(p.APIURL, p.APIKEY)
 	sites, _, _ := client.Sites()
@@ -201,7 +201,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cl, _ := getConnectionByUrlCrm(c.APIURL)
+	cl, _ := getConnectionByURL(c.APIURL)
 	if cl.ID != 0 {
 		http.Error(w, "connection already created", http.StatusBadRequest)
 		return
@@ -246,7 +246,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		Integrations: &v5.Integrations{
 			MgTransport: &v5.MgTransport{
 				WebhookUrl: fmt.Sprintf(
-					"https://%s/telegram",
+					"https://%s/webhook",
 					r.Host,
 				),
 			},

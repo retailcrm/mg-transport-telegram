@@ -6,13 +6,13 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-func setMsgHandler() {
+func setTransportRoutes() {
 	http.HandleFunc("/add-bot/", addBotHandler)
 	http.HandleFunc("/del-bot/", deleteBotHandler)
 	http.HandleFunc("/map-bot/", mappingHandler)
 }
 
-// Get bot info
+// GetBotInfo function
 func GetBotInfo(token string) (*tgbotapi.BotAPI, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
@@ -21,7 +21,7 @@ func GetBotInfo(token string) (*tgbotapi.BotAPI, error) {
 	return bot, nil
 }
 
-// Get bot name
+// GetBotName function
 func GetBotName(bot *tgbotapi.BotAPI) string {
 	return bot.Self.FirstName
 }

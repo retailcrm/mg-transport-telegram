@@ -47,8 +47,7 @@ func (x *RunCommand) Execute(args []string) error {
 }
 
 func start() {
-	setAppHandler()
-	setMsgHandler()
-
+	setWrapperRoutes()
+	setTransportRoutes()
 	http.ListenAndServe(config.HTTPServer.Listen, nil)
 }

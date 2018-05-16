@@ -9,7 +9,7 @@ import (
 
 var tokenCounter uint32
 
-//Generate token method
+// GenerateToken function
 func GenerateToken() string {
 	c := atomic.AddUint32(&tokenCounter, 1)
 
