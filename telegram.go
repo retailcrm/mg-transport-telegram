@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api"
-	"net/url"
 )
 
 func setTransportRoutes() {
@@ -15,11 +14,7 @@ func setTransportRoutes() {
 
 // GetBotInfo function
 func GetBotInfo(token string) (*tgbotapi.BotAPI, error) {
-	proxyUrl, err := url.Parse("http://201.132.155.10:8080")
-	httpClient := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
-
-	bot, err := tgbotapi.NewBotAPIWithClient(token, httpClient)
-	//bot, err := tgbotapi.NewBotAPI(token)
+	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
 	}

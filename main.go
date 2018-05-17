@@ -12,7 +12,7 @@ type Options struct {
 	Config string `short:"c" long:"config" default:"config.yml" description:"Path to configuration file"`
 }
 
-const transport = "mg-telegram-test-2"
+const transport = "mg-telegram"
 
 var options Options
 var parser = flags.NewParser(&options, flags.Default)
