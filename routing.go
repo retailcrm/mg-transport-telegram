@@ -10,8 +10,8 @@ import (
 	"regexp"
 
 	"github.com/getsentry/raven-go"
-	"github.com/gwinn/mg-transport-api-client-go/v1"
 	"github.com/retailcrm/api-client-go/v5"
+	"github.com/retailcrm/mg-transport-api-client-go/v1"
 )
 
 var (
