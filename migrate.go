@@ -35,7 +35,7 @@ func (x *MigrateCommand) Execute(args []string) error {
 	return err
 }
 
-// Migrate funcion
+// Migrate function
 func Migrate(database string, version string, path string) error {
 	m, err := migrate.New("file://"+path, database)
 	if err != nil {
@@ -79,5 +79,5 @@ func Migrate(database string, version string, path string) error {
 
 	fmt.Printf("Migrations not found in path %s\n", path)
 
-	return errors.New("Migrations not found")
+	return errors.New("migrations not found")
 }

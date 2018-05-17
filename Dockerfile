@@ -1,4 +1,4 @@
-FROM golang:1.9-stretch as ca-certs
+FROM golang:1.9.3-stretch as ca-certs
 FROM scratch
 
 COPY --from=ca-certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

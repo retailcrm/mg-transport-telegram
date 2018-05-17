@@ -313,8 +313,8 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 	client := v5.New(c.APIURL, c.APIKEY)
 
-	cr, status, errors := client.APICredentials()
-	if errors.RuntimeErr != nil {
+	cr, status, errr := client.APICredentials()
+	if errr.RuntimeErr != nil {
 		http.Error(w, "set correct crm url or key", http.StatusBadRequest)
 		logger.Error(c.APIURL, status, err.Error(), cr)
 		return
@@ -349,16 +349,16 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	data, status, errors := client.IntegrationModuleEdit(integration)
-	if errors.RuntimeErr != nil {
+	data, status, errr := client.IntegrationModuleEdit(integration)
+	if errr.RuntimeErr != nil {
 		http.Error(w, "error while creating integration", http.StatusBadRequest)
-		logger.Error(c.APIURL, status, errors.RuntimeErr, data)
+		logger.Error(c.APIURL, status, errr.RuntimeErr, data)
 		return
 	}
 
 	if status >= http.StatusBadRequest {
-		http.Error(w, errors.ApiErr, http.StatusBadRequest)
-		logger.Error(c.APIURL, status, errors.ApiErr, data)
+		http.Error(w, errr.ApiErr, http.StatusBadRequest)
+		logger.Error(c.APIURL, status, errr.ApiErr, data)
 		return
 	}
 
@@ -425,7 +425,7 @@ func validate(c Connection) error {
 		return errors.New("missing crm url or key")
 	}
 
-	if res, _ := regexp.MatchString(`https:\/\/?[\da-z\.-]+\.(retailcrm\.(ru|pro)|ecomlogic\.com)`, c.APIURL); !res {
+	if res, _ := regexp.MatchString(`https://?[\da-z\.-]+\.(retailcrm\.(ru|pro)|ecomlogic\.com)`, c.APIURL); !res {
 		return errors.New("set correct crm url")
 	}
 
