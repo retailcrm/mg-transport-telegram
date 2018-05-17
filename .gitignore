@@ -1,0 +1,5 @@
+gin-bin
+config.yml
+.idea/
+/bin/
+mg-telegram
