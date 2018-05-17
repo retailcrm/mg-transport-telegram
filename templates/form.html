@@ -23,7 +23,7 @@
                 <div id="tab1" class="col s12">
                     <div class="row" style="margin-top: 5%">
                         <form class="col s8 offset-s2" action="/save/" method="POST">
-                            <input id="clientId" name="clientId" type="hidden" value="{{.Conn.ClientID}}">
+                            <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
                             <div class="row">
                                 <div class="input-field col s12">
                                     <input placeholder="API Url" id="api_url" name="api_url" type="text" class="validate" value="{{.Conn.APIURL}}">
@@ -48,7 +48,7 @@
                 <div id="tab2" class="col s12">
                     <div class="row" style="margin-top: 5%">
                         <form class="col s8 offset-s2" action="/add-bot/" method="POST">
-                            <input id="clientId" name="clientId" type="hidden" value="{{.Conn.ClientID}}">
+                            <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
                             <div class="row">
                                 <div class="input-field col s11">
                                     <input placeholder="Bot Token" id="token" name="token" type="text" class="validate">
@@ -73,7 +73,8 @@
                                                 <td>{{.Name}}</td>
                                                 <td>{{.Token}}</td>
                                                 <td>
-                                                    <button class="activity-bot btn btn-meddium waves-effect waves-light red" type="submit" name="action" style="float: right" data-activity="{{.Active}}" data-id="{{.Token}}">
+                                                    <button class="activity-bot btn btn-meddium waves-effect waves-light red" type="submit" name="action" style="float: right"
+                                                            data-activity="{{.Active}}" data-id="{{.Token}}">
                                                         <i class="material-icons">{{if .Active}}stop{{else}}play_arrow{{end}}</i>
                                                     </button>
                                                 </td>
@@ -112,10 +113,15 @@
                                     {{end}}
                                 </tbody>
                             </table>
-                            <button class="btn btn-meddium waves-effect waves-light red" type="submit" id="map-bot">
-                                save
-                                <i class="material-icons">save</i>
-                            </button>
+                        </div>
+                            <div class="row">
+                                <div class="input-field col s6 offset-s5">
+                                    <button class="btn btn-meddium waves-effect waves-light red" type="submit" id="map-bot">
+                                        save
+                                        <i class="material-icons">save</i>
+                                    </button>
+                                </div>
+                            </div>
                         {{end}}
                     </div>
                 </div>
@@ -130,7 +136,11 @@
                 });
 
                 $('.activity-bot').on("click", function(e) {
-                    send("/activity-bot/", {token: $(this).attr("data-id"), active: ($(this).attr("data-activity") == 'true')})
+                    send("/activity-bot/", {
+                        token: $(this).attr("data-id"),
+                        active: ($(this).attr("data-activity") == 'true'),
+                        clientId: $('input[name=clientId]').val(),
+                    })
                 });
 
                 $('#map-bot').on("click", function(e) {

@@ -10,6 +10,7 @@ import (
 	"regexp"
 
 	"github.com/getsentry/raven-go"
+	"github.com/gwinn/mg-transport-api-client-go/v1"
 	"github.com/retailcrm/api-client-go/v5"
 )
 
@@ -84,12 +85,46 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	bot, err := GetBotInfo(b.Token)
 	if err != nil {
-		logger.Error(err.Error(), b.Token)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Error(b.Token, err.Error())
+		http.Error(w, "set correct bot token", http.StatusInternalServerError)
 		return
 	}
 
 	b.Name = GetBotName(bot)
+
+	c, err := getConnection(b.ClientID)
+	if err != nil {
+		http.Error(w, "could not find account, please contact technical support", http.StatusInternalServerError)
+		logger.Error(b.ClientID, err.Error())
+		return
+	}
+
+	if c.MGURL == "" || c.MGToken == "" {
+		http.Error(w, "could not find account, please contact technical support", http.StatusInternalServerError)
+		logger.Error(b.ClientID)
+		return
+	}
+
+	ch := v1.Channel{
+		Type: "telegram",
+		Events: []string{
+			"message_sent",
+			"message_updated",
+			"message_deleted",
+			"message_read",
+		},
+	}
+
+	var client = v1.New(c.MGURL, c.MGToken)
+	data, status, err := client.ActivateTransportChannel(ch)
+	if status != http.StatusCreated {
+		http.Error(w, "error while activating the channel", http.StatusInternalServerError)
+		logger.Error(c.APIURL, status, err.Error(), data)
+		return
+	}
+
+	b.Channel = data.ChannelID
+	b.Active = true
 
 	err = b.createBot()
 	if err != nil {
@@ -114,6 +149,48 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	ch := v1.Channel{
+		ID:   getBotChannelByToken(b.Token),
+		Type: "telegram",
+		Events: []string{
+			"message_sent",
+			"message_updated",
+			"message_deleted",
+			"message_read",
+		},
+	}
+
+	c, err := getConnection(b.ClientID)
+	if err != nil {
+		http.Error(w, "could not find account, please contact technical support", http.StatusInternalServerError)
+		logger.Error(b.ClientID, err.Error())
+		return
+	}
+
+	if c.MGURL == "" || c.MGToken == "" {
+		http.Error(w, "could not find account, please contact technical support", http.StatusInternalServerError)
+		logger.Error(b.ClientID, "could not find account, please contact technical support")
+		return
+	}
+
+	var client = v1.New(c.MGURL, c.MGToken)
+
+	if b.Active {
+		data, status, err := client.DeactivateTransportChannel(ch.ID)
+		if status > http.StatusOK {
+			http.Error(w, "error while deactivating the channel", http.StatusInternalServerError)
+			logger.Error(b.ClientID, status, err.Error(), data)
+			return
+		}
+	} else {
+		data, status, err := client.ActivateTransportChannel(ch)
+		if status > http.StatusCreated {
+			http.Error(w, "error while activating the channel", http.StatusInternalServerError)
+			logger.Error(b.ClientID, status, err.Error(), data)
+			return
+		}
 	}
 
 	err = b.setBotActivity()
@@ -199,7 +276,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	err = validate(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		logger.Error(err)
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 
@@ -215,16 +292,16 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
-	c := &Connection{
+	c := Connection{
 		ClientID: GenerateToken(),
 		APIURL:   string([]byte(r.FormValue("api_url"))),
 		APIKEY:   string([]byte(r.FormValue("api_key"))),
 	}
 
-	err := validate(*c)
+	err := validate(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		logger.Error(err)
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 
@@ -236,21 +313,16 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 	client := v5.New(c.APIURL, c.APIKEY)
 
-	cr, _, errors := client.APICredentials()
+	cr, status, errors := client.APICredentials()
 	if errors.RuntimeErr != nil {
-		logger.Error(errors.RuntimeErr)
+		http.Error(w, "set correct crm url or key", http.StatusBadRequest)
+		logger.Error(c.APIURL, status, err.Error(), cr)
 		return
 	}
 
 	if !cr.Success {
 		http.Error(w, "set correct crm url or key", http.StatusBadRequest)
-		return
-	}
-
-	err = c.createConnection()
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Error(c.APIURL, status, err.Error(), cr)
 		return
 	}
 
@@ -277,14 +349,26 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	_, status, errors := client.IntegrationModuleEdit(integration)
+	data, status, errors := client.IntegrationModuleEdit(integration)
 	if errors.RuntimeErr != nil {
-		logger.Error(errors.RuntimeErr)
+		http.Error(w, "error while creating integration", http.StatusBadRequest)
+		logger.Error(c.APIURL, status, errors.RuntimeErr, data)
 		return
 	}
 
 	if status >= http.StatusBadRequest {
-		logger.Error(errors.ApiErr, c.APIURL)
+		http.Error(w, errors.ApiErr, http.StatusBadRequest)
+		logger.Error(c.APIURL, status, errors.ApiErr, data)
+		return
+	}
+
+	c.MGURL = data.Info["baseUrl"]
+	c.MGToken = data.Info["token"]
+
+	err = c.createConnection()
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		http.Error(w, "error while creating connection", http.StatusInternalServerError)
 		return
 	}
 
@@ -337,7 +421,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func validate(c Connection) error {
-	if c.APIURL != "" || c.APIKEY != "" {
+	if c.APIURL == "" || c.APIKEY == "" {
 		return errors.New("missing crm url or key")
 	}
 

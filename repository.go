@@ -64,6 +64,13 @@ func (b *Bot) setBotActivity() error {
 	return orm.DB.Model(b).Where("token = ?", b.Token).Update("Active", !b.Active).Error
 }
 
+func getBotChannelByToken(token string) uint64 {
+	var b Bot
+	orm.DB.First(&b, "token = ?", token)
+
+	return b.Channel
+}
+
 func (b *Bots) getBotsByClientID(uid string) error {
 	return orm.DB.Where("client_id = ?", uid).Find(b).Error
 }

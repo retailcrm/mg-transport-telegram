@@ -19,7 +19,7 @@ type Connection struct {
 type Bot struct {
 	ID        int    `gorm:"primary_key"`
 	ClientID  string `gorm:"client_id" json:"clientId,omitempty"`
-	Channel   string `json:"channel,omitempty"`
+	Channel   uint64 `json:"channel,omitempty"`
 	Token     string `json:"token,omitempty"`
 	Name      string `json:"name,omitempty"`
 	CreatedAt time.Time
