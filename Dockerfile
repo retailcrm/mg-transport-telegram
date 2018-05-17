@@ -7,6 +7,6 @@ WORKDIR /
 
 EXPOSE 3001
 
-ENTRYPOINT ["/mg-transport-telegram", "--config", "/config.yml"]
+ENTRYPOINT ["/mg-telegram", "--config", "/config.yml"]
 
 CMD ["run"]
