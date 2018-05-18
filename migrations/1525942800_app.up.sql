@@ -12,4 +12,3 @@ create table connection
   updated_at timestamp with time zone,
   active     boolean
 );
-

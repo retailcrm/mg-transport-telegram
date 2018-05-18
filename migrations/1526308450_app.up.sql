@@ -6,4 +6,3 @@ create table mapping
   site_code text,
   bot_id    text
 );
-
