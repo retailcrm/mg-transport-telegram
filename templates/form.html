@@ -1,20 +1,11 @@
-<html>
-    <head>
-        <meta title="Telegram transport">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-alpha.4/css/materialize.min.css">
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-alpha.4/js/materialize.min.js"></script>
-        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    </head>
-    <body>
+{{template "header"}}
         <div class="container">
             <div class="row" style="margin-top: 5%">
                 <div class="col s8 offset-s3">
                     <ul class="tabs" id="tab">
-                        <li class="tab col s3"><a class="active" href="#tab1">Settings CRM</a></li>
-                        <li class="tab col s3"><a href="#tab2">Bots</a></li>
-                        <li class="tab col s3"><a href="#tab3">Mapping</a></li>
+                        <li class="tab col s3"><a class="active" href="#tab1">{{.Locale.TabSettings}}</a></li>
+                        <li class="tab col s3"><a href="#tab2">{{.Locale.TabBots}}</a></li>
+                        <li class="tab col s3"><a href="#tab3">{{.Locale.TabMapping}}</a></li>
                     </ul>
                 </div>
                 <div class="col s8 offset-s3">
@@ -22,7 +13,7 @@
                 </div>
                 <div id="tab1" class="col s12">
                     <div class="row" style="margin-top: 5%">
-                        <form class="col s8 offset-s2" action="/save/" method="POST">
+                        <form id="save" class="col s8 offset-s2" action="/save/" method="POST">
                             <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
                             <div class="row">
                                 <div class="input-field col s12">
@@ -37,7 +28,7 @@
                             <div class="row">
                                 <div class="input-field col s6 offset-s5">
                                     <button class="btn waves-effect waves-light red lighten-1" type="submit" name="action">
-                                        Connect
+                                        {{.Locale.ButConnect}}
                                         <i class="material-icons right">sync</i>
                                     </button>
                                 </div>
@@ -47,11 +38,11 @@
                 </div>
                 <div id="tab2" class="col s12">
                     <div class="row" style="margin-top: 5%">
-                        <form class="col s8 offset-s2" action="/add-bot/" method="POST">
+                        <form id="add-bot" class="col s8 offset-s2" action="/add-bot/" method="POST">
                             <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
                             <div class="row">
                                 <div class="input-field col s11">
-                                    <input placeholder="Bot Token" id="token" name="token" type="text" class="validate">
+                                    <input placeholder="{{.Locale.TableToken}}" id="token" name="token" type="text" class="validate">
                                 </div>
                                 <div class="input-field col s1">
                                     <button class="btn btn-meddium waves-effect waves-light red" type="submit" name="action">
@@ -64,7 +55,9 @@
                             <table class="col s8 offset-s2">
                                 <thead>
                                     <tr>
-                                        <th>Name</th><th>Token</th><th style="text-align: right">Activity</th>
+                                        <th>{{.Locale.TableName}}</th>
+                                        <th>{{.Locale.TableToken}}</th>
+                                        <th style="text-align: right">{{.Locale.TableActivity}}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -89,12 +82,13 @@
                     <div class="row" style="margin-top: 5%">
                         {{ $sites := .Sites }}
                         {{ $bots := .Bots }}
+                        {{ $locale := .Locale }}
                         {{if and $sites $bots}}
                             <table class="col s8 offset-s2">
                                 <thead>
                                 <tr>
-                                    <th>Sites</th>
-                                    <th>Bots</th>
+                                    <th>{{.Locale.MapSites}}</th>
+                                    <th>{{.Locale.TabBots}}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -103,7 +97,7 @@
                                             <td>{{$site.Name}}</td>
                                             <td>
                                                 <select class="browser-default">
-                                                    <option value="" disabled selected>Choose your option</option>
+                                                    <option value="" disabled selected>{{$locale.MapOption}}</option>
                                                         {{range $bot := $bots}}
                                                             <option data-code="{{$site.Code}}" data-bot="{{$bot.ID}}">{{$bot.Name}}</option>
                                                         {{end}}
@@ -117,7 +111,7 @@
                             <div class="row">
                                 <div class="input-field col s6 offset-s5">
                                     <button class="btn btn-meddium waves-effect waves-light red" type="submit" id="map-bot">
-                                        save
+                                        {{.Locale.ButConnect}}
                                         <i class="material-icons">save</i>
                                     </button>
                                 </div>
@@ -128,19 +122,46 @@
             </div>
 
             <script>
-                $("form").each(function() {
-                    $(this).on("submit", function(e) {
-                        e.preventDefault();
-                        send($(this).attr('action'), formDataToObj($(this).serializeArray()))
-                    });
+                $("#save").on("submit", function(e) {
+                    e.preventDefault();
+                    send(
+                        $(this).attr('action'),
+                        formDataToObj($(this).serializeArray()),
+                        function (data) {
+                            return 0;
+                        }
+                    )
+                });
+
+                $("#add-bot").on("submit", function(e) {
+                    e.preventDefault();
+                    send(
+                        $(this).attr('action'),
+                        formDataToObj($(this).serializeArray()),
+                        function (data) {
+                            location.reload();
+                        }
+                    )
                 });
 
                 $('.activity-bot').on("click", function(e) {
-                    send("/activity-bot/", {
-                        token: $(this).attr("data-id"),
-                        active: ($(this).attr("data-activity") == 'true'),
-                        clientId: $('input[name=clientId]').val(),
-                    })
+                    let but = $(this);
+                    send("/activity-bot/",
+                        {
+                            token: but.attr("data-id"),
+                            active: (but.attr("data-activity") == 'true'),
+                            clientId: $('input[name=clientId]').val(),
+                        },
+                        function (data) {
+                            if (but.attr("data-activity") == 'true') {
+                                but.find('i').replaceWith('<i class="material-icons">play_arrow</i>');
+                                but.attr("data-activity", "false")
+                            } else {
+                                but.find('i').replaceWith('<i class="material-icons">stop</i>');
+                                but.attr("data-activity", "true")
+                            }
+                        }
+                    )
                 });
 
                 $('#map-bot').on("click", function(e) {
@@ -159,14 +180,13 @@
                     }
                 });
 
-                function send(url, data) {
+                function send(url, data, callback) {
+                    $('#msg').empty();
                     $.ajax({
                         url: url,
                         data: JSON.stringify(data),
                         type: "POST",
-                        success: function(res){
-                            location.reload();
-                        },
+                        success: callback,
                         error: function (res){
                             if (res.status < 400) {
                                 if (res.responseText) {
@@ -175,7 +195,7 @@
                                     );
                                 }
                             } else {
-                                $('#msg').append(res.responseText);
+                                $('#msg').text(res.responseText);
                             }
                         }
                     });

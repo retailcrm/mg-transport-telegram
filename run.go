@@ -49,5 +49,6 @@ func (x *RunCommand) Execute(args []string) error {
 func start() {
 	setWrapperRoutes()
 	setTransportRoutes()
+	http.Handle("/web/", http.StripPrefix("/web/", http.FileServer(http.Dir("web"))))
 	http.ListenAndServe(config.HTTPServer.Listen, nil)
 }
