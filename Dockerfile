@@ -1,12 +1,9 @@
-FROM golang:1.9.3-stretch as ca-certs
-FROM scratch
-
-COPY --from=ca-certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+FROM golang:1.9.3-stretch
 
 WORKDIR /
+ADD ./bin/mg-telegram /
+ADD ./templates/ /templates/
 
 EXPOSE 3001
 
-ENTRYPOINT ["/mg-telegram", "--config", "/config.yml"]
-
-CMD ["run"]
+ENTRYPOINT ["/mg-telegram", "run"]
