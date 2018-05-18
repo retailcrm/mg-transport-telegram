@@ -4,6 +4,7 @@ WORKDIR /
 ADD ./bin/mg-telegram /
 ADD ./templates/ /templates/
 ADD ./web/ /web/
+ADD ./translate/ /translate/
 
 EXPOSE 3001
 
