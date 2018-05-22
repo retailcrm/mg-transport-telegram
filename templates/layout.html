@@ -1,0 +1,25 @@
+{{ define "header" }}
+<html>
+    <head>
+        <meta title="Telegram transport">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+        <link rel="stylesheet" href="../web/materialize.min.css">
+        <link rel="stylesheet" href="../web/font.css" >
+        <link rel="stylesheet" href="../web/style.css" >
+    </head>
+    <body>
+        <div class="container">
+            <div class="indent-top center-align">
+                <img id="logo" src="../web/telegram_logo.svg" alt="telegram" >
+            </div>
+{{ end }}
+
+{{ define "footer" }}
+        </div>
+    <script src="../web/materialize.min.js"></script>
+    <script src="../web/jquery-3.3.1.min.js"></script>
+    <script src="../web/script.js"></script>
+    </body>
+</html>
+{{ end }}

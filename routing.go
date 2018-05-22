@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	templates = template.Must(template.ParseFiles("templates/header.html", "templates/form.html", "templates/home.html"))
+	templates = template.Must(template.ParseFiles("templates/layout.html", "templates/form.html", "templates/home.html"))
 	validPath = regexp.MustCompile("^/(save|settings)/([a-zA-Z0-9]+)$")
 	localizer *i18n.Localizer
 	bundle    = &i18n.Bundle{DefaultLanguage: language.English}
@@ -91,6 +91,7 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 		&p,
 		map[string]interface{}{
 			"ButConnect": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "but_connect"}),
+			"ApiKey":     localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "api_key"}),
 		},
 	}
 	renderTemplate(w, "home", &res)
@@ -125,7 +126,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	bot, err := GetBotInfo(b.Token)
 	if err != nil {
 		logger.Error(b.Token, err.Error())
-		http.Error(w, "set correct bot token", http.StatusInternalServerError)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_token"}), http.StatusInternalServerError)
 		return
 	}
 
@@ -244,30 +245,6 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func mappingHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return
-	}
-
-	var rec []Mapping
-
-	err = json.Unmarshal(body, &rec)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return
-	}
-
-	err = createMapping(rec)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
 func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 	setLocale(r.Header.Get("Accept-Language"))
 
@@ -299,14 +276,12 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 		sites.Sites,
 		map[string]interface{}{
 			"ButConnect":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "but_connect"}),
+			"ApiKey":        localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "api_key"}),
 			"TabSettings":   localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_settings"}),
 			"TabBots":       localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_bots"}),
-			"TabMapping":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_mapping"}),
 			"TableName":     localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_name"}),
 			"TableToken":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_token"}),
 			"TableActivity": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_activity"}),
-			"MapSites":      localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "map_sites"}),
-			"MapOption":     localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "map_option"}),
 		},
 	}
 
@@ -348,13 +323,24 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
 	setLocale(r.Header.Get("Accept-Language"))
-	c := Connection{
-		ClientID: GenerateToken(),
-		APIURL:   string([]byte(r.FormValue("api_url"))),
-		APIKEY:   string([]byte(r.FormValue("api_key"))),
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	err := validate(c)
+	var c Connection
+
+	err = json.Unmarshal(body, &c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	c.ClientID = GenerateToken()
+
+	err = validate(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		logger.Error(c.APIURL, err.Error())
@@ -388,9 +374,12 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		Active:          true,
 		Name:            "MG Telegram",
 		ClientID:        c.ClientID,
-		BaseURL:         config.HTTPServer.Host,
+		BaseURL: fmt.Sprintf(
+			"https://%s",
+			config.HTTPServer.Host,
+		),
 		AccountURL: fmt.Sprintf(
-			"%s/settings/%s",
+			"https://%s/settings/%s",
 			config.HTTPServer.Host,
 			c.ClientID,
 		),
@@ -398,7 +387,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		Integrations: &v5.Integrations{
 			MgTransport: &v5.MgTransport{
 				WebhookUrl: fmt.Sprintf(
-					"%s/webhook",
+					"https://%s/webhook",
 					config.HTTPServer.Host,
 				),
 			},

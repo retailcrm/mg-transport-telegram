@@ -1,12 +1,10 @@
 but_connect: Save
 tab_settings: Connection settings
 tab_bots: Bots
-tab_mapping: Mapping
 table_name: Bot name
 table_token: Bot token
 table_activity: Activity
-map_sites: Sites
-map_option: Choose your option
+api_key: API Key
 
 no_bot_token: Enter the bot token
 incorrect_data: Incorrect data
@@ -21,3 +19,4 @@ error_creating_connection: Error while creating connection
 connection_already_created: Connection already created
 missing_url_key: Missing crm url or apiKey
 incorrect_url: Enter the correct CRM url
+incorrect_token: Set correct bot token

@@ -1,28 +1,5 @@
 package main
 
-func createMapping(s []Mapping) error {
-	tx := orm.DB.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Warning(r)
-			tx.Rollback()
-		}
-	}()
-
-	for _, val := range s {
-		if err := tx.Create(&val).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	return tx.Commit().Error
-}
-
 func getConnection(uid string) (*Connection, error) {
 	var connection Connection
 	orm.DB.First(&connection, "client_id = ?", uid)

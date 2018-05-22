@@ -1,0 +1,24 @@
+.indent-top {
+    margin-top: 2%;
+}
+
+.text-left{
+    text-align: right;
+}
+
+#bots .activity-bot{
+    float: right;
+}
+#msg{
+    height: 23px;
+}
+
+.err-msg{
+    color: red;
+    margin: 0;
+}
+
+#logo{
+    height: 80px;
+    border-bottom: 1px solid red;
+}
