@@ -36,12 +36,14 @@ func TestRouting_addBotHandler(t *testing.T) {
 	gock.New("https://api.telegram.org").
 		Post("/botbot123:test/getMe").
 		Reply(200).
-		BodyString(`{"ok":true,"status":200,"name":"TestBot"}`)
+		BodyString(`{"ok":true,"result":{"id":123,"is_bot":true,"first_name":"Test","username":"TestBot"}}`)
 
 	ch := v1.Channel{
 		Type: "telegram",
 		Events: []string{
 			"message_sent",
+			"message_updated",
+			"message_deleted",
 			"message_read",
 		},
 	}
@@ -64,7 +66,6 @@ func TestRouting_addBotHandler(t *testing.T) {
 	handler := http.HandlerFunc(addBotHandler)
 
 	handler.ServeHTTP(rr, req)
-
 	if rr.Code != http.StatusCreated {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			rr.Code, http.StatusCreated)
