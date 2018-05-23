@@ -1,199 +1,80 @@
-<html>
-    <head>
-        <meta title="Telegram transport">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-alpha.4/css/materialize.min.css">
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-alpha.4/js/materialize.min.js"></script>
-        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    </head>
-    <body>
-        <div class="container">
-            <div class="row" style="margin-top: 5%">
-                <div class="col s8 offset-s3">
-                    <ul class="tabs" id="tab">
-                        <li class="tab col s3"><a class="active" href="#tab1">Settings CRM</a></li>
-                        <li class="tab col s3"><a href="#tab2">Bots</a></li>
-                        <li class="tab col s3"><a href="#tab3">Mapping</a></li>
-                    </ul>
-                </div>
-                <div class="col s8 offset-s3">
-                    <p id="msg"></p>
-                </div>
-                <div id="tab1" class="col s12">
-                    <div class="row" style="margin-top: 5%">
-                        <form class="col s8 offset-s2" action="/save/" method="POST">
-                            <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
-                            <div class="row">
-                                <div class="input-field col s12">
-                                    <input placeholder="API Url" id="api_url" name="api_url" type="text" class="validate" value="{{.Conn.APIURL}}">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="input-field col s12">
-                                    <input placeholder="API Key" id="api_key" name="api_key" type="text" class="validate" value="{{.Conn.APIKEY}}">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="input-field col s6 offset-s5">
-                                    <button class="btn waves-effect waves-light red lighten-1" type="submit" name="action">
-                                        Connect
-                                        <i class="material-icons right">sync</i>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <div id="tab2" class="col s12">
-                    <div class="row" style="margin-top: 5%">
-                        <form class="col s8 offset-s2" action="/add-bot/" method="POST">
-                            <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
-                            <div class="row">
-                                <div class="input-field col s11">
-                                    <input placeholder="Bot Token" id="token" name="token" type="text" class="validate">
-                                </div>
-                                <div class="input-field col s1">
-                                    <button class="btn btn-meddium waves-effect waves-light red" type="submit" name="action">
-                                        <i class="material-icons">add</i>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                        {{if .Bots}}
-                            <table class="col s8 offset-s2">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th><th>Token</th><th style="text-align: right">Activity</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                        {{range .Bots}}
-                                            <tr>
-                                                <td>{{.Name}}</td>
-                                                <td>{{.Token}}</td>
-                                                <td>
-                                                    <button class="activity-bot btn btn-meddium waves-effect waves-light red" type="submit" name="action" style="float: right"
-                                                            data-activity="{{.Active}}" data-id="{{.Token}}">
-                                                        <i class="material-icons">{{if .Active}}stop{{else}}play_arrow{{end}}</i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        {{end}}
-                                </tbody>
-                            </table>
-                        {{end}}
-                    </div>
-                </div>
-                <div id="tab3" class="col s12">
-                    <div class="row" style="margin-top: 5%">
-                        {{ $sites := .Sites }}
-                        {{ $bots := .Bots }}
-                        {{if and $sites $bots}}
-                            <table class="col s8 offset-s2">
-                                <thead>
-                                <tr>
-                                    <th>Sites</th>
-                                    <th>Bots</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                    {{range $site := $sites}}
-                                        <tr>
-                                            <td>{{$site.Name}}</td>
-                                            <td>
-                                                <select class="browser-default">
-                                                    <option value="" disabled selected>Choose your option</option>
-                                                        {{range $bot := $bots}}
-                                                            <option data-code="{{$site.Code}}" data-bot="{{$bot.ID}}">{{$bot.Name}}</option>
-                                                        {{end}}
-                                                </select>
-                                            </td>
-                                        </tr>
-                                    {{end}}
-                                </tbody>
-                            </table>
-                        </div>
-                            <div class="row">
-                                <div class="input-field col s6 offset-s5">
-                                    <button class="btn btn-meddium waves-effect waves-light red" type="submit" id="map-bot">
-                                        save
-                                        <i class="material-icons">save</i>
-                                    </button>
-                                </div>
-                            </div>
-                        {{end}}
-                    </div>
-                </div>
-            </div>
-
-            <script>
-                $("form").each(function() {
-                    $(this).on("submit", function(e) {
-                        e.preventDefault();
-                        send($(this).attr('action'), formDataToObj($(this).serializeArray()))
-                    });
-                });
-
-                $('.activity-bot').on("click", function(e) {
-                    send("/activity-bot/", {
-                        token: $(this).attr("data-id"),
-                        active: ($(this).attr("data-activity") == 'true'),
-                        clientId: $('input[name=clientId]').val(),
-                    })
-                });
-
-                $('#map-bot').on("click", function(e) {
-                    let mapping = [];
-
-                    $('select option:selected').each(function() {
-                        let site_code = $(this).attr("data-code");
-                        let bot_id = $(this).attr("data-bot");
-                        if (site_code && bot_id) {
-                            mapping.push({site_code: site_code, bot_id: bot_id});
-                        }
-                    });
-
-                    if (!$.isEmptyObject(mapping)) {
-                        send("/map-bot/", mapping);
-                    }
-                });
-
-                function send(url, data) {
-                    $.ajax({
-                        url: url,
-                        data: JSON.stringify(data),
-                        type: "POST",
-                        success: function(res){
-                            location.reload();
-                        },
-                        error: function (res){
-                            if (res.status < 400) {
-                                if (res.responseText) {
-                                    document.location.replace(
-                                        location.protocol.concat("//").concat(window.location.host) + res.responseText
-                                    );
-                                }
-                            } else {
-                                $('#msg').append(res.responseText);
-                            }
-                        }
-                    });
-                }
-
-                function formDataToObj(formArray) {
-                    let obj = {};
-                    for (let i = 0; i < formArray.length; i++){
-                        obj[formArray[i]['name']] = formArray[i]['value'];
-                    }
-                    return obj;
-                }
-
-                document.addEventListener('DOMContentLoaded', function() {
-                    M.Tabs.init(document.getElementById("tab"));
-                });
-            </script>
+{{template "header"}}
+    <div class="row indent-top">
+        <div class="col s6 offset-s3">
+            <ul class="tabs" id="tab">
+                <li class="tab col s6"><a class="active" href="#tab1">{{.Locale.TabSettings}}</a></li>
+                <li class="tab col s6"><a class="" href="#tab2">{{.Locale.TabBots}}</a></li>
+            </ul>
         </div>
-    </body>
-</html>
-
+        <div class="col s6 offset-s3">
+            <div id="msg" class="indent-top"></div>
+        </div>
+        <div id="tab1" class="col s12">
+            <div class="row indent-top">
+                <form id="save" class="col s8 offset-s2" action="/save/" method="POST">
+                    <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <input placeholder="API Url" id="api_url" name="api_url" type="text" class="validate" value="{{.Conn.APIURL}}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <input placeholder="{{.Locale.ApiKey}}" id="api_key" name="api_key" type="text" class="validate" value="{{.Conn.APIKEY}}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-field col s12 center-align">
+                            <button class="btn waves-effect waves-light light-blue darken-1" type="submit" name="action">
+                                {{.Locale.ButConnect}}
+                                <i class="material-icons right">sync</i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id="tab2" class="col s12">
+            <div class="row indent-top">
+                <form id="add-bot" class="col s8 offset-s2" action="/add-bot/" method="POST">
+                    <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <input placeholder="{{.Locale.TableToken}}" id="token" name="token" type="text" class="validate">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-field col s12 center-align">
+                            <button class="btn waves-effect waves-light light-blue darken-1" type="submit" name="action">
+                            {{.Locale.AddBot}} <i class="material-icons right">add</i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <table id="bots" class="col s8 offset-s2">
+                    <thead>
+                        <tr>
+                            <th>{{.Locale.TableName}}</th>
+                            <th>{{.Locale.TableToken}}</th>
+                            <th class="text-left">{{.Locale.TableActivity}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                            {{range .Bots}}
+                                <tr>
+                                    <td>{{.Name}}</td>
+                                    <td>{{.Token}}</td>
+                                    <td>
+                                        <button class="activity-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
+                                                data-activity="{{.Active}}" data-token="{{.Token}}">
+                                            <i class="material-icons">{{if .Active}}pause{{else}}play_arrow{{end}}</i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{{template "footer"}}

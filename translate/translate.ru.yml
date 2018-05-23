@@ -1,0 +1,23 @@
+but_connect: Сохранить
+tab_settings: Настройки CRM
+tab_bots: Боты
+table_name: Имя
+table_token: Токен
+table_activity: Активность
+api_key: API Ключ
+
+no_bot_token: Введите токен
+wrong_data: Неверные данные
+set_method: Установить метод POST
+bot_already_created: Бот уже создан
+not_find_account: Не удалось найти учетную запись, обратитесь в службу технической поддержки
+error_activating_channel: Ошибка при активации канала
+error_deactivating_channel: Ошибка при отключении канала
+incorrect_url_key: Введите корректный URL или apiKey
+error_creating_integration: Ошибка при создании интеграции
+error_creating_connection: Ошибка при создании соединения
+connection_already_created: Соединение уже создано
+missing_url_key: Отсутствует URL или apiKey
+incorrect_url: Введите корректный URL CRM
+incorrect_token: Установите корректный токен
+add_bot: Добавить бота

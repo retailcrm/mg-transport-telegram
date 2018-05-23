@@ -1,0 +1,23 @@
+but_connect: Save
+tab_settings: Connection settings
+tab_bots: Bots
+table_name: Bot name
+table_token: Bot token
+table_activity: Activity
+api_key: API Key
+
+no_bot_token: Enter the bot token
+wrong_data: Incorrect data
+set_method: Set POST method
+bot_already_created: Bot already created
+not_find_account: Could not find account, please contact technical support
+error_activating_channel: Error while activating the channel
+error_deactivating_channel: Error while deactivating the channel
+incorrect_url_key: Enter the correct CRM url or apiKey
+error_creating_integration: Error while creating integration
+error_creating_connection: Error while creating connection
+connection_already_created: Connection already created
+missing_url_key: Missing crm url or apiKey
+incorrect_url: Enter the correct CRM url
+incorrect_token: Set correct bot token
+add_bot: Add bot

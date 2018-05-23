@@ -11,4 +11,3 @@ create table bot
   updated_at timestamp with time zone,
   active     boolean
 );
-

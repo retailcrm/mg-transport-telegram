@@ -27,12 +27,5 @@ type Bot struct {
 	Active    bool `json:"active,omitempty"`
 }
 
-// Mapping model
-type Mapping struct {
-	ID       int    `gorm:"primary_key"`
-	SiteCode string `gorm:"site_code" json:"site_code,omitempty"`
-	BotID    string `gorm:"bot_id" json:"bot_id,omitempty"`
-}
-
 //Bots list
 type Bots []Bot
