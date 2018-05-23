@@ -7,7 +7,7 @@ table_activity: Activity
 api_key: API Key
 
 no_bot_token: Enter the bot token
-incorrect_data: Incorrect data
+wrong_data: Incorrect data
 set_method: Set POST method
 bot_already_created: Bot already created
 not_find_account: Could not find account, please contact technical support
@@ -20,3 +20,4 @@ connection_already_created: Connection already created
 missing_url_key: Missing crm url or apiKey
 incorrect_url: Enter the correct CRM url
 incorrect_token: Set correct bot token
+add_bot: Add bot

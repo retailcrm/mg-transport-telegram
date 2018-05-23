@@ -281,6 +281,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 			"TabBots":       localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_bots"}),
 			"TableName":     localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_name"}),
 			"TableToken":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_token"}),
+			"AddBot":        localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "add_bot"}),
 			"TableActivity": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_activity"}),
 		},
 	}
@@ -358,13 +359,13 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	cr, status, errr := client.APICredentials()
 	if errr.RuntimeErr != nil {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_url_key"}), http.StatusBadRequest)
-		logger.Error(c.APIURL, status, err.Error(), cr)
+		logger.Error(c.APIURL, status, errr.RuntimeErr, cr)
 		return
 	}
 
 	if !cr.Success {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_url_key"}), http.StatusBadRequest)
-		logger.Error(c.APIURL, status, err.Error(), cr)
+		logger.Error(c.APIURL, status, errr.ApiErr, cr)
 		return
 	}
 
@@ -372,8 +373,12 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		Code:            transport,
 		IntegrationCode: transport,
 		Active:          true,
-		Name:            "MG Telegram",
+		Name:            "Telegram",
 		ClientID:        c.ClientID,
+		Logo: fmt.Sprintf(
+			"https://%s/web/telegram_logo.svg",
+			config.HTTPServer.Host,
+		),
 		BaseURL: fmt.Sprintf(
 			"https://%s",
 			config.HTTPServer.Host,

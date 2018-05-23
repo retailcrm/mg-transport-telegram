@@ -3,7 +3,7 @@
         <div class="col s6 offset-s3">
             <ul class="tabs" id="tab">
                 <li class="tab col s6"><a class="active" href="#tab1">{{.Locale.TabSettings}}</a></li>
-                <li class="tab col s6"><a href="#tab2">{{.Locale.TabBots}}</a></li>
+                <li class="tab col s6"><a class="" href="#tab2">{{.Locale.TabBots}}</a></li>
             </ul>
         </div>
         <div class="col s6 offset-s3">
@@ -24,8 +24,8 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="input-field col s6 offset-s5">
-                            <button class="btn waves-effect waves-light red lighten-1" type="submit" name="action">
+                        <div class="input-field col s12 center-align">
+                            <button class="btn waves-effect waves-light light-blue darken-1" type="submit" name="action">
                                 {{.Locale.ButConnect}}
                                 <i class="material-icons right">sync</i>
                             </button>
@@ -39,12 +39,14 @@
                 <form id="add-bot" class="col s8 offset-s2" action="/add-bot/" method="POST">
                     <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
                     <div class="row">
-                        <div class="input-field col s11">
+                        <div class="input-field col s12">
                             <input placeholder="{{.Locale.TableToken}}" id="token" name="token" type="text" class="validate">
                         </div>
-                        <div class="input-field col s1">
-                            <button class="btn btn-meddium waves-effect waves-light red" type="submit" name="action">
-                                <i class="material-icons">add</i>
+                    </div>
+                    <div class="row">
+                        <div class="input-field col s12 center-align">
+                            <button class="btn waves-effect waves-light light-blue darken-1" type="submit" name="action">
+                            {{.Locale.AddBot}} <i class="material-icons right">add</i>
                             </button>
                         </div>
                     </div>
@@ -63,9 +65,9 @@
                                     <td>{{.Name}}</td>
                                     <td>{{.Token}}</td>
                                     <td>
-                                        <button class="activity-bot btn btn-meddium waves-effect waves-light red" type="submit" name="action"
+                                        <button class="activity-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
                                                 data-activity="{{.Active}}" data-token="{{.Token}}">
-                                            <i class="material-icons">{{if .Active}}stop{{else}}play_arrow{{end}}</i>
+                                            <i class="material-icons">{{if .Active}}pause{{else}}play_arrow{{end}}</i>
                                         </button>
                                     </td>
                                 </tr>

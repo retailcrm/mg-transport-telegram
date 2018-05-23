@@ -48,7 +48,7 @@ $(document).on("click", ".activity-bot", function(e) {
                 but.find('i').replaceWith('<i class="material-icons">play_arrow</i>');
                 but.attr("data-activity", "false")
             } else {
-                but.find('i').replaceWith('<i class="material-icons">stop</i>');
+                but.find('i').replaceWith('<i class="material-icons">pause</i>');
                 but.attr("data-activity", "true")
             }
         }
@@ -70,7 +70,8 @@ function send(url, data, callback) {
                     );
                 }
             } else {
-                $('#msg').html(`<p class="err-msg truncate">${res.responseText}</p>`);
+                //$('#msg').html(`<p class="err-msg truncate">${res.responseText}</p>`);
+                M.toast({html: res.responseText})
             }
         }
     });
@@ -83,9 +84,9 @@ function getBotTemplate(data) {
             <td>${bot.name}</td>
             <td>${bot.token}</td>
             <td>
-                <button class="activity-bot btn btn-meddium waves-effect waves-light red" type="submit" name="action"
+                <button class="activity-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
                         data-activity="true" data-token="${bot.token}">
-                    <i class="material-icons">stop</i>
+                    <i class="material-icons">pause</i>
                 </button>
             </td>
         </tr>`;
