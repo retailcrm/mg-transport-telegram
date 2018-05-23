@@ -8,8 +8,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/getsentry/raven-go"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/retailcrm/api-client-go/v5"
 	"github.com/retailcrm/mg-transport-api-client-go/v1"
@@ -19,7 +22,7 @@ import (
 
 var (
 	templates = template.Must(template.ParseFiles("templates/layout.html", "templates/form.html", "templates/home.html"))
-	validPath = regexp.MustCompile("^/(save|settings)/([a-zA-Z0-9]+)$")
+	validPath = regexp.MustCompile(`^/(save|settings|telegram)/([a-zA-Z0-9-:_+]+)$`)
 	localizer *i18n.Localizer
 	bundle    = &i18n.Bundle{DefaultLanguage: language.English}
 	matcher   = language.NewMatcher([]language.Tag{
@@ -62,10 +65,16 @@ func setWrapperRoutes() {
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, c interface{}) {
-	err := templates.ExecuteTemplate(w, tmpl+".html", c)
+	tm, err := template.ParseFiles("templates/layout.html", "templates/"+tmpl+".html")
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = tm.Execute(w, &c)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 }
 
@@ -101,7 +110,7 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -109,25 +118,41 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(body, &b)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if b.Token == "" {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "no_bot_token"}), http.StatusInternalServerError)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "no_bot_token"}), http.StatusBadRequest)
 		return
 	}
 
 	cl, _ := getBotByToken(b.Token)
 	if cl.ID != 0 {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "bot_already_created"}), http.StatusInternalServerError)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "bot_already_created"}), http.StatusBadRequest)
 		return
 	}
 
 	bot, err := GetBotInfo(b.Token)
 	if err != nil {
 		logger.Error(b.Token, err.Error())
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_token"}), http.StatusInternalServerError)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_token"}), http.StatusBadRequest)
+		return
+	}
+
+	bot.Debug = false
+
+	_, err = bot.SetWebhook(tgbotapi.NewWebhook("https://" + config.HTTPServer.Host + "/telegram/" + bot.Token))
+	if err != nil {
+		logger.Error(b.Token, err.Error())
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_webhook"}), http.StatusBadRequest)
+		return
+	}
+
+	_, err = bot.GetWebhookInfo()
+	if err != nil {
+		logger.Error(b.Token, err.Error())
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_webhook"}), http.StatusBadRequest)
 		return
 	}
 
@@ -135,14 +160,14 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	c, err := getConnection(b.ClientID)
 	if err != nil {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_find_account"}), http.StatusInternalServerError)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
 		logger.Error(b.ClientID, err.Error())
 		return
 	}
 
 	if c.MGURL == "" || c.MGToken == "" {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_find_account"}), http.StatusInternalServerError)
-		logger.Error(b.ClientID)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
+		logger.Error(b.ClientID, "MGURL or MGToken is empty")
 		return
 	}
 
@@ -159,7 +184,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	var client = v1.New(c.MGURL, c.MGToken)
 	data, status, err := client.ActivateTransportChannel(ch)
 	if status != http.StatusCreated {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activating_channel"}), http.StatusInternalServerError)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activating_channel"}), http.StatusBadRequest)
 		logger.Error(c.APIURL, status, err.Error(), data)
 		return
 	}
@@ -170,7 +195,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	err = b.createBot()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -182,7 +207,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -190,7 +215,7 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(body, &b)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -207,14 +232,14 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	c, err := getConnection(b.ClientID)
 	if err != nil {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_find_account"}), http.StatusInternalServerError)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
 		logger.Error(b.ClientID, err.Error())
 		return
 	}
 
 	if c.MGURL == "" || c.MGToken == "" {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_find_account"}), http.StatusInternalServerError)
-		logger.Error(b.ClientID, "not find account")
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
+		logger.Error(b.ClientID, "MGURL or MGToken is empty")
 		return
 	}
 
@@ -223,14 +248,14 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 	if b.Active {
 		data, status, err := client.DeactivateTransportChannel(ch.ID)
 		if status > http.StatusOK {
-			http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_deactivating_channel"}), http.StatusInternalServerError)
+			http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_deactivating_channel"}), http.StatusBadRequest)
 			logger.Error(b.ClientID, status, err.Error(), data)
 			return
 		}
 	} else {
 		data, status, err := client.ActivateTransportChannel(ch)
 		if status > http.StatusCreated {
-			http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activating_channel"}), http.StatusInternalServerError)
+			http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activating_channel"}), http.StatusBadRequest)
 			logger.Error(b.ClientID, status, err.Error(), data)
 			return
 		}
@@ -239,7 +264,7 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 	err = b.setBotActivity()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -252,7 +277,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 	p, err := getConnection(uid)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -294,7 +319,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 func saveHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -302,7 +327,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(body, &c)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -316,12 +341,12 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	err = c.saveConnection()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("/settings/" + r.FormValue("clientId")))
+	w.Write([]byte(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "successful"})))
 }
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
@@ -329,7 +354,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -337,7 +362,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(body, &c)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -416,16 +441,30 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 	c.MGURL = data.Info["baseUrl"]
 	c.MGToken = data.Info["token"]
+	c.Active = true
 
 	err = c.createConnection()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_connection"}), http.StatusInternalServerError)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_connection"}), http.StatusBadRequest)
 		return
 	}
 
+	res := struct {
+		Url     string
+		Message string
+	}{
+		Url:     "/settings/" + c.ClientID,
+		Message: localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "successful"}),
+	}
+
+	jss, err := json.Marshal(res)
+	if err != nil {
+		logger.Error(c.APIURL, err)
+	}
+
 	w.WriteHeader(http.StatusFound)
-	w.Write([]byte("/settings/" + c.ClientID))
+	w.Write(jss)
 }
 
 func activityHandler(w http.ResponseWriter, r *http.Request) {
@@ -482,4 +521,84 @@ func validate(c Connection) error {
 	}
 
 	return nil
+}
+
+func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
+	t := time.Now()
+	b, err := getBotByToken(token)
+	if err != nil {
+		logger.Error(token, err)
+	}
+
+	if !b.Active {
+		logger.Error(token, err)
+	}
+
+	bot, err := GetBotInfo(token)
+	if err != nil {
+		logger.Error(token, err)
+	}
+
+	bot.Debug = false
+
+	bytes, _ := ioutil.ReadAll(r.Body)
+
+	var update tgbotapi.Update
+	json.Unmarshal(bytes, &update)
+
+	c, err := getConnection(b.ClientID)
+	if err != nil {
+		logger.Error(token, err.Error())
+		return
+	}
+
+	if c.MGURL == "" || c.MGToken == "" {
+		logger.Error(token, "MGURL or MGToken is empty")
+		return
+	}
+
+	var client = v1.New(c.MGURL, c.MGToken)
+
+	if update.Message != nil {
+		snd := v1.SendData{
+			Message: v1.SendMessage{
+				Message: v1.Message{
+					ExternalID: strconv.Itoa(update.Message.MessageID),
+					Type:       "text",
+					Text:       update.Message.Text,
+				},
+				SentAt: time.Now(),
+			},
+			User: v1.User{
+				ExternalID: strconv.Itoa(update.Message.From.ID),
+				Nickname:   update.Message.From.UserName,
+				Firstname:  update.Message.From.FirstName,
+			},
+			Channel: b.Channel,
+		}
+
+		data, status, err := client.Messages(snd)
+		if err != nil {
+			logger.Error(token, err.Error(), status, data)
+		}
+	}
+
+	if update.EditedMessage != nil {
+		snd := v1.UpdateData{
+			Message: v1.UpdateMessage{
+				Message: v1.Message{
+					ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
+					Type:       "text",
+					Text:       update.EditedMessage.Text,
+				},
+			},
+			Channel: b.Channel,
+		}
+
+		data, status, err := client.UpdateMessages(snd)
+		if err != nil {
+			logger.Error(token, err.Error(), status, data)
+		}
+	}
+	fmt.Println("Time working: ", time.Since(t))
 }

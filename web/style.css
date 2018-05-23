@@ -6,6 +6,16 @@
     text-align: right;
 }
 
+#tab{
+    width: 50%;
+    margin: 0 auto 23px;
+}
+
+.tab-el-center{
+    width: 67%;
+    margin: 0 auto;
+}
+
 #bots .activity-bot{
     float: right;
 }

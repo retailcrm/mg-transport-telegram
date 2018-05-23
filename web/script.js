@@ -14,8 +14,8 @@ $("#save").on("submit", function(e) {
     send(
         $(this).attr('action'),
         formDataToObj($(this).serializeArray()),
-        function () {
-            return 0;
+        function (data) {
+            M.toast({html: data});
         }
     )
 });
@@ -31,6 +31,7 @@ $("#add-bot").on("submit", function(e) {
                 bots.removeClass("hide")
             }
             $("#bots tbody").append(getBotTemplate(data));
+            $("#token").val("");
         }
     )
 });
@@ -56,7 +57,6 @@ $(document).on("click", ".activity-bot", function(e) {
 });
 
 function send(url, data, callback) {
-    $('#msg').empty();
     $.ajax({
         url: url,
         data: JSON.stringify(data),
@@ -65,12 +65,14 @@ function send(url, data, callback) {
         error: function (res){
             if (res.status < 400) {
                 if (res.responseText) {
+                    let resObj = JSON.parse(res.responseText);
+                    localStorage.setItem("createdMsg", resObj.Message);
+
                     document.location.replace(
-                        location.protocol.concat("//").concat(window.location.host) + res.responseText
+                        location.protocol.concat("//").concat(window.location.host) + resObj.Url
                     );
                 }
             } else {
-                //$('#msg').html(`<p class="err-msg truncate">${res.responseText}</p>`);
                 M.toast({html: res.responseText})
             }
         }
@@ -105,5 +107,13 @@ $( document ).ready(function() {
     M.Tabs.init(document.getElementById("tab"));
     if ($("table tbody").children().length === 0) {
         $("#bots").addClass("hide");
+    }
+
+    let createdMsg = localStorage.getItem("createdMsg");
+    if (createdMsg) {
+        setTimeout(function() {
+            M.toast({html: createdMsg});
+            localStorage.removeItem("createdMsg");
+        }, 1000);
     }
 });

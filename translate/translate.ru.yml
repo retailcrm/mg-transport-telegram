@@ -5,12 +5,15 @@ table_name: Имя
 table_token: Токен
 table_activity: Активность
 api_key: API Ключ
+add_bot: Добавить бота
+title: Модуль подключения Telegram к retailCRM
+successful: Данные успешно обновлены
 
 no_bot_token: Введите токен
 wrong_data: Неверные данные
 set_method: Установить метод POST
 bot_already_created: Бот уже создан
-not_find_account: Не удалось найти учетную запись, обратитесь в службу технической поддержки
+not_found_account: Не удалось найти учетную запись, обратитесь в службу технической поддержки
 error_activating_channel: Ошибка при активации канала
 error_deactivating_channel: Ошибка при отключении канала
 incorrect_url_key: Введите корректный URL или apiKey
@@ -20,5 +23,4 @@ connection_already_created: Соединение уже создано
 missing_url_key: Отсутствует URL или apiKey
 incorrect_url: Введите корректный URL CRM
 incorrect_token: Установите корректный токен
-add_bot: Добавить бота
-title: Модуль подключения Telegram к retailCRM
+error_creating_webhook: Ошибка при создании webhook
