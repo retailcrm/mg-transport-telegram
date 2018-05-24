@@ -5,6 +5,7 @@ ADD ./bin/mg-telegram /
 ADD ./templates/ /templates/
 ADD ./web/ /web/
 ADD ./translate/ /translate/
+ADD ./migrations/ /migrations/
 
 EXPOSE 3001
 

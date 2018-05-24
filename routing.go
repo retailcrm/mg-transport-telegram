@@ -92,6 +92,7 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 		map[string]interface{}{
 			"ButConnect": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "but_connect"}),
 			"ApiKey":     localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "api_key"}),
+			"Title":      localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "title"}),
 		},
 	}
 	renderTemplate(w, "home", &res)
@@ -283,6 +284,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 			"TableToken":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_token"}),
 			"AddBot":        localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "add_bot"}),
 			"TableActivity": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_activity"}),
+			"Title":         localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "title"}),
 		},
 	}
 
