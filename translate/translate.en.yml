@@ -24,3 +24,4 @@ missing_url_key: Missing crm url or apiKey
 incorrect_url: Enter the correct CRM url
 incorrect_token: Set correct bot token
 error_creating_webhook: Error while creating webhook
+error_creating_bot: Error while creating bot

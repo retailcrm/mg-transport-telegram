@@ -66,7 +66,7 @@ function send(url, data, callback) {
             if (res.status < 400) {
                 if (res.responseText) {
                     let resObj = JSON.parse(res.responseText);
-                    localStorage.setItem("createdMsg", resObj.Message);
+                    sessionStorage.setItem("createdMsg", resObj.Message);
 
                     document.location.replace(
                         location.protocol.concat("//").concat(window.location.host) + resObj.Url
@@ -109,11 +109,11 @@ $( document ).ready(function() {
         $("#bots").addClass("hide");
     }
 
-    let createdMsg = localStorage.getItem("createdMsg");
+    let createdMsg = sessionStorage.getItem("createdMsg");
     if (createdMsg) {
         setTimeout(function() {
             M.toast({html: createdMsg});
-            localStorage.removeItem("createdMsg");
+            sessionStorage.removeItem("createdMsg");
         }, 1000);
     }
 });
