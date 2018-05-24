@@ -24,4 +24,5 @@ missing_url_key: Отсутствует URL или apiKey
 incorrect_url: Введите корректный URL CRM
 incorrect_token: Установите корректный токен
 error_creating_webhook: Ошибка при создании webhook
-error_creating_bot: Ошибка при создании бота
+error_adding_bot: Ошибка при добавлении бота
+error_save: Ошибка при сохранении, обратитесь в службу технической поддержки
