@@ -1,9 +1,6 @@
-{{template "header"}}
-    <div class="row indent-top">
-        <div class="col s6 offset-s3">
-            <div id="msg" class="indent-top"></div>
-        </div>
-        <form class="col s8 offset-s2" method="POST" id="save-crm" action="/create/">
+{{define "body"}}
+    <div class="row indent-top home">
+        <form class="tab-el-center" method="POST" id="save-crm" action="/create/">
             <div id="msg"></div>
             <div class="row">
                 <div class="input-field col s12">
@@ -25,4 +22,4 @@
             </div>
         </form>
     </div>
-{{template "footer"}}
+{{end}}

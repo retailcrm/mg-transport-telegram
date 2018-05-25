@@ -1,17 +1,14 @@
-{{template "header"}}
+{{define "body"}}
     <div class="row indent-top">
-        <div class="col s6 offset-s3">
+        <div class="col s12">
             <ul class="tabs" id="tab">
                 <li class="tab col s6"><a class="active" href="#tab1">{{.Locale.TabSettings}}</a></li>
                 <li class="tab col s6"><a class="" href="#tab2">{{.Locale.TabBots}}</a></li>
             </ul>
         </div>
-        <div class="col s6 offset-s3">
-            <div id="msg" class="indent-top"></div>
-        </div>
         <div id="tab1" class="col s12">
             <div class="row indent-top">
-                <form id="save" class="col s8 offset-s2" action="/save/" method="POST">
+                <form id="save" class="tab-el-center" action="/save/" method="POST">
                     <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
                     <div class="row">
                         <div class="input-field col s12">
@@ -36,7 +33,7 @@
         </div>
         <div id="tab2" class="col s12">
             <div class="row indent-top">
-                <form id="add-bot" class="col s8 offset-s2" action="/add-bot/" method="POST">
+                <form id="add-bot" class="tab-el-center" action="/add-bot/" method="POST">
                     <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
                     <div class="row">
                         <div class="input-field col s12">
@@ -51,7 +48,7 @@
                         </div>
                     </div>
                 </form>
-                <table id="bots" class="col s8 offset-s2">
+                <table id="bots" class="tab-el-center">
                     <thead>
                         <tr>
                             <th>{{.Locale.TableName}}</th>
@@ -77,4 +74,4 @@
             </div>
         </div>
     </div>
-{{template "footer"}}
+{{end}}

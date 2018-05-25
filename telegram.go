@@ -9,6 +9,7 @@ import (
 func setTransportRoutes() {
 	http.HandleFunc("/add-bot/", addBotHandler)
 	http.HandleFunc("/activity-bot/", activityBotHandler)
+	http.HandleFunc("/telegram/", makeHandler(telegramWebhookHandler))
 }
 
 // GetBotInfo function

@@ -5,12 +5,15 @@ table_name: Bot name
 table_token: Bot token
 table_activity: Activity
 api_key: API Key
+add_bot: Add bot
+title: Telegram transport for retailCRM
+successful: Data successfully updated
 
 no_bot_token: Enter the bot token
 wrong_data: Incorrect data
 set_method: Set POST method
 bot_already_created: Bot already created
-not_find_account: Could not find account, please contact technical support
+not_found_account: The account could not be found, contact technical support
 error_activating_channel: Error while activating the channel
 error_deactivating_channel: Error while deactivating the channel
 incorrect_url_key: Enter the correct CRM url or apiKey
@@ -20,5 +23,6 @@ connection_already_created: Connection already created
 missing_url_key: Missing crm url or apiKey
 incorrect_url: Enter the correct CRM url
 incorrect_token: Set correct bot token
-add_bot: Add bot
-title: Telegram transport for retailCRM
+error_creating_webhook: Error while creating webhook
+error_adding_bot: Error while adding bot
+error_save: An error occurred while saving, contact technical support

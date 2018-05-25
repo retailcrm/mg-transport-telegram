@@ -1,17 +1,17 @@
 package main
 
-func getConnection(uid string) (*Connection, error) {
+func getConnection(uid string) *Connection {
 	var connection Connection
 	orm.DB.First(&connection, "client_id = ?", uid)
 
-	return &connection, nil
+	return &connection
 }
 
-func getConnectionByURL(urlCrm string) (*Connection, error) {
+func getConnectionByURL(urlCrm string) *Connection {
 	var connection Connection
 	orm.DB.First(&connection, "api_url = ?", urlCrm)
 
-	return &connection, nil
+	return &connection
 }
 
 func (c *Connection) setConnectionActivity() error {
@@ -26,11 +26,11 @@ func (c *Connection) saveConnection() error {
 	return orm.DB.Model(c).Where("client_id = ?", c.ClientID).Update(c).Error
 }
 
-func getBotByToken(token string) (*Bot, error) {
+func getBotByToken(token string) *Bot {
 	var bot Bot
 	orm.DB.First(&bot, "token = ?", token)
 
-	return &bot, nil
+	return &bot
 }
 
 func (b *Bot) createBot() error {
