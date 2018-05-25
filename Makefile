@@ -45,7 +45,7 @@ migrate: build
 	@${BIN} --config $(CONFIG_FILE) migrate -p ./migrations/
 
 migrate_test: build
-	@${BIN} --config $(CONFIG_TEST_FILE) migrate
+	@${BIN} --config $(CONFIG_TEST_FILE) migrate ./migrations/
 
 migrate_down: build
 	@${BIN} --config $(CONFIG_FILE) migrate -v down
