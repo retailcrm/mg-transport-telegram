@@ -10,11 +10,10 @@ import (
 
 // TransportConfig struct
 type TransportConfig struct {
-	LogLevel       logging.Level    `yaml:"log_level"`
-	Database       DatabaseConfig   `yaml:"database"`
-	SentryDSN      string           `yaml:"sentry_dsn"`
-	HTTPServer     HTTPServerConfig `yaml:"http_server"`
-	TelegramConfig TelegramConfig   `yaml:"telegram"`
+	LogLevel   logging.Level    `yaml:"log_level"`
+	Database   DatabaseConfig   `yaml:"database"`
+	SentryDSN  string           `yaml:"sentry_dsn"`
+	HTTPServer HTTPServerConfig `yaml:"http_server"`
 }
 
 // DatabaseConfig struct
@@ -31,11 +30,6 @@ type DatabaseConfig struct {
 type HTTPServerConfig struct {
 	Host   string `yaml:"host"`
 	Listen string `yaml:"listen"`
-}
-
-// TelegramConfig struct
-type TelegramConfig struct {
-	Debug bool `yaml:"debug"`
 }
 
 // LoadConfig read configuration file

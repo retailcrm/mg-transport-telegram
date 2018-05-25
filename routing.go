@@ -109,6 +109,7 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addBotHandler(w http.ResponseWriter, r *http.Request) {
+	setLocale(r.Header.Get("Accept-Language"))
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
@@ -312,6 +313,8 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
+	setLocale(r.Header.Get("Accept-Language"))
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
@@ -385,7 +388,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 	cr, status, errr := client.APICredentials()
 	if errr.RuntimeErr != nil {
-		raven.CaptureErrorAndWait(err, nil)
+		raven.CaptureErrorAndWait(errr.RuntimeErr, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusInternalServerError)
 		logger.Error(c.APIURL, status, errr.RuntimeErr, cr)
 		return
@@ -429,7 +432,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, status, errr := client.IntegrationModuleEdit(integration)
 	if errr.RuntimeErr != nil {
-		raven.CaptureErrorAndWait(err, nil)
+		raven.CaptureErrorAndWait(errr.RuntimeErr, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_integration"}), http.StatusInternalServerError)
 		logger.Error(c.APIURL, status, errr.RuntimeErr, data)
 		return
@@ -554,85 +557,96 @@ func validate(c Connection) error {
 }
 
 func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
-	b := getBotByToken(token)
-	if b.ID == 0 {
-		logger.Error(token, "missing")
-		return
-	}
-
-	if !b.Active {
-		logger.Error(token, "deactivated")
-		return
-	}
-
-	bot, err := GetBotInfo(token)
-	if err != nil {
-		logger.Error(token, err)
-	}
-
-	bot.Debug = false
-
+	ok := make(chan bool)
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(token, err)
 		return
 	}
 
-	var update tgbotapi.Update
-
-	err = json.Unmarshal(bytes, &update)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return
-	}
-
-	c := getConnection(b.ClientID)
-	if c.MGURL == "" || c.MGToken == "" {
-		logger.Error(token, "MGURL or MGToken is empty")
-		return
-	}
-
-	var client = v1.New(c.MGURL, c.MGToken)
-
-	if update.Message != nil {
-		snd := v1.SendData{
-			Message: v1.SendMessage{
-				Message: v1.Message{
-					ExternalID: strconv.Itoa(update.Message.MessageID),
-					Type:       "text",
-					Text:       update.Message.Text,
-				},
-				SentAt: time.Now(),
-			},
-			User: v1.User{
-				ExternalID: strconv.Itoa(update.Message.From.ID),
-				Nickname:   update.Message.From.UserName,
-				Firstname:  update.Message.From.FirstName,
-			},
-			Channel: b.Channel,
+	go func() {
+		b := getBotByToken(token)
+		if b.ID == 0 {
+			logger.Error(token, "missing")
+			return
 		}
 
-		data, status, err := client.Messages(snd)
+		if !b.Active {
+			logger.Error(token, "deactivated")
+			return
+		}
+
+		var update tgbotapi.Update
+
+		err = json.Unmarshal(bytes, &update)
 		if err != nil {
-			logger.Error(token, err.Error(), status, data)
+			raven.CaptureErrorAndWait(err, nil)
+			logger.Error(token, err)
+			return
 		}
-	}
 
-	if update.EditedMessage != nil {
-		snd := v1.UpdateData{
-			Message: v1.UpdateMessage{
-				Message: v1.Message{
-					ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
-					Type:       "text",
-					Text:       update.EditedMessage.Text,
+		c := getConnection(b.ClientID)
+		if c.MGURL == "" || c.MGToken == "" {
+			logger.Error(token, "MGURL or MGToken is empty")
+			return
+		}
+
+		var client = v1.New(c.MGURL, c.MGToken)
+
+		if update.Message != nil {
+			snd := v1.SendData{
+				Message: v1.SendMessage{
+					Message: v1.Message{
+						ExternalID: strconv.Itoa(update.Message.MessageID),
+						Type:       "text",
+						Text:       update.Message.Text,
+					},
+					SentAt: time.Now(),
 				},
-			},
-			Channel: b.Channel,
+				User: v1.User{
+					ExternalID: strconv.Itoa(update.Message.From.ID),
+					Nickname:   update.Message.From.UserName,
+					Firstname:  update.Message.From.FirstName,
+				},
+				Channel: b.Channel,
+			}
+
+			data, status, err := client.Messages(snd)
+			if err != nil {
+				logger.Error(token, err.Error(), status, data)
+				ok <- false
+				return
+			}
 		}
 
-		data, status, err := client.UpdateMessages(snd)
-		if err != nil {
-			logger.Error(token, err.Error(), status, data)
+		if update.EditedMessage != nil {
+			snd := v1.UpdateData{
+				Message: v1.UpdateMessage{
+					Message: v1.Message{
+						ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
+						Type:       "text",
+						Text:       update.EditedMessage.Text,
+					},
+				},
+				Channel: b.Channel,
+			}
+
+			data, status, err := client.UpdateMessages(snd)
+			if err != nil {
+				logger.Error(token, err.Error(), status, data)
+				ok <- false
+				return
+			}
 		}
+
+		ok <- true
+	}()
+
+	if <-ok {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("SendMessage"))
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
 	}
 }
