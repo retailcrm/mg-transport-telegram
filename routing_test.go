@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -41,6 +42,8 @@ func TestRouting_connectHandler(t *testing.T) {
 func TestRouting_addBotHandler(t *testing.T) {
 	defer gock.Off()
 
+	p := url.Values{"url": {"https://test.com/telegram/123123:Qwerty"}}
+
 	gock.New("https://api.telegram.org").
 		Post("/bot123123:Qwerty/getMe").
 		Reply(200).
@@ -49,7 +52,7 @@ func TestRouting_addBotHandler(t *testing.T) {
 	gock.New("https://api.telegram.org").
 		Post("/bot123123:Qwerty/setWebhook").
 		MatchType("url").
-		BodyString("url=https%3A%2F%2Ftest.com%2Ftelegram%2F123123%3AQwerty").
+		BodyString(p.Encode()).
 		Reply(201).
 		BodyString(`{"ok":true}`)
 
@@ -143,6 +146,74 @@ func TestRouting_saveHandler(t *testing.T) {
 			rr.Code, http.StatusOK)
 	}
 }
+
+//
+//func TestRouting_createHandler(t *testing.T) {
+//	defer gock.Off()
+//
+//	gock.New("https://test2.retailcrm.ru").
+//		Get("/api/credentials").
+//		Reply(200).
+//		BodyString(`{"success": true}`)
+//
+//	integrationModule := v5.IntegrationModule{
+//		Code:            transport,
+//		IntegrationCode: transport,
+//		Active:          true,
+//		Name:            "Telegram",
+//		ClientID:        "123",
+//		Logo: fmt.Sprintf(
+//			"https://%s/web/telegram_logo.svg",
+//			config.HTTPServer.Host,
+//		),
+//		BaseURL: fmt.Sprintf(
+//			"https://%s",
+//			config.HTTPServer.Host,
+//		),
+//		AccountURL: fmt.Sprintf(
+//			"https://%s/settings/%s",
+//			config.HTTPServer.Host,
+//			"123",
+//		),
+//		Actions: map[string]string{"activity": "/actions/activity"},
+//		Integrations: &v5.Integrations{
+//			MgTransport: &v5.MgTransport{
+//				WebhookUrl: fmt.Sprintf(
+//					"https://%s/webhook",
+//					config.HTTPServer.Host,
+//				),
+//			},
+//		},
+//	}
+//
+//	updateJSON, _ := json.Marshal(&integrationModule)
+//	p := url.Values{"integrationModule": {string(updateJSON[:])}}
+//
+//	gock.New("https://test2.retailcrm.ru").
+//		Post(fmt.Sprintf("/api/v5/integration-modules/%s/edit", integrationModule.Code)).
+//		MatchType("url").
+//		BodyString(p.Encode()).
+//		MatchHeader("X-API-KEY", "test").
+//		Reply(201).
+//		BodyString(`{"success": true, "info": {"baseUrl": "http://test.te", "token": "test"}}`)
+//
+//	req, err := http.NewRequest("POST", "/create/",
+//		strings.NewReader(
+//			`{"api_url": "https://test2.retailcrm.ru","api_key": "test"}`,
+//		))
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//
+//	rr := httptest.NewRecorder()
+//	handler := http.HandlerFunc(createHandler)
+//	handler.ServeHTTP(rr, req)
+//
+//	if rr.Code != http.StatusFound {
+//		t.Errorf("handler returned wrong status code: got %v want %v",
+//			rr.Code, http.StatusFound)
+//	}
+//}
 
 func TestRouting_activityHandler(t *testing.T) {
 	req, err := http.NewRequest("POST", "/actions/activity",

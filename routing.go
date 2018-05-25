@@ -8,8 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"strconv"
-	"time"
 
 	"github.com/getsentry/raven-go"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
@@ -62,6 +60,8 @@ func setWrapperRoutes() {
 	http.HandleFunc("/save/", saveHandler)
 	http.HandleFunc("/create/", createHandler)
 	http.HandleFunc("/actions/activity", activityHandler)
+	http.HandleFunc("/add-bot/", addBotHandler)
+	http.HandleFunc("/activity-bot/", activityBotHandler)
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, c interface{}) {
@@ -100,7 +100,7 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 	}{
 		&p,
 		map[string]interface{}{
-			"ButConnect": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "but_connect"}),
+			"ButtonSave": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "button_save"}),
 			"ApiKey":     localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "api_key"}),
 			"Title":      localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "title"}),
 		},
@@ -131,6 +131,13 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	c := getConnection(b.ClientID)
+	if c.MGURL == "" || c.MGToken == "" {
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
+		logger.Error(b.ClientID, "MGURL or MGToken is empty")
+		return
+	}
+
 	cl := getBotByToken(b.Token)
 	if cl.ID != 0 {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "bot_already_created"}), http.StatusBadRequest)
@@ -146,9 +153,15 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	bot.Debug = false
 
-	_, err = bot.SetWebhook(tgbotapi.NewWebhook("https://" + config.HTTPServer.Host + "/telegram/" + bot.Token))
+	wr, err := bot.SetWebhook(tgbotapi.NewWebhook("https://" + config.HTTPServer.Host + "/telegram/" + bot.Token))
 	if err != nil {
 		logger.Error(b.Token, err.Error())
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_webhook"}), http.StatusBadRequest)
+		return
+	}
+
+	if !wr.Ok {
+		logger.Error(b.Token, wr.ErrorCode, wr.Result)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_webhook"}), http.StatusBadRequest)
 		return
 	}
@@ -161,13 +174,6 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b.Name = GetBotName(bot)
-
-	c := getConnection(b.ClientID)
-	if c.MGURL == "" || c.MGToken == "" {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
-		logger.Error(b.ClientID, "MGURL or MGToken is empty")
-		return
-	}
 
 	ch := v1.Channel{
 		Type: "telegram",
@@ -227,6 +233,13 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	c := getConnection(b.ClientID)
+	if c.MGURL == "" || c.MGToken == "" {
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
+		logger.Error(b.ClientID, "MGURL or MGToken is empty")
+		return
+	}
+
 	ch := v1.Channel{
 		ID:   getBotChannelByToken(b.Token),
 		Type: "telegram",
@@ -236,13 +249,6 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 			"message_deleted",
 			"message_read",
 		},
-	}
-
-	c := getConnection(b.ClientID)
-	if c.MGURL == "" || c.MGToken == "" {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
-		logger.Error(b.ClientID, "MGURL or MGToken is empty")
-		return
 	}
 
 	var client = v1.New(c.MGURL, c.MGToken)
@@ -265,6 +271,7 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = b.setBotActivity()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		logger.Error(b.ClientID, err.Error())
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
 		return
@@ -297,7 +304,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 		p,
 		bots,
 		map[string]interface{}{
-			"ButConnect":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "but_connect"}),
+			"ButtonSave":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "button_save"}),
 			"ApiKey":        localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "api_key"}),
 			"TabSettings":   localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_settings"}),
 			"TabBots":       localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_bots"}),
@@ -331,7 +338,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = validate(c)
+	err = validateCrmSettings(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		logger.Error(c.APIURL, err.Error())
@@ -371,7 +378,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 	c.ClientID = GenerateToken()
 
-	err = validate(c)
+	err = validateCrmSettings(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		logger.Error(c.APIURL, err.Error())
@@ -399,6 +406,8 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error(c.APIURL, status, errr.ApiErr, cr)
 		return
 	}
+
+	//TODO: проверка на необходимые методы cr.Credentials
 
 	integration := v5.IntegrationModule{
 		Code:            transport,
@@ -466,7 +475,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	jss, err := json.Marshal(res)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_connection"}), http.StatusBadRequest)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_connection"}), http.StatusInternalServerError)
 		return
 	}
 
@@ -544,7 +553,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonString)
 }
 
-func validate(c Connection) error {
+func validateCrmSettings(c Connection) error {
 	if c.APIURL == "" || c.APIKEY == "" {
 		return errors.New(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "missing_url_key"}))
 	}
@@ -554,99 +563,4 @@ func validate(c Connection) error {
 	}
 
 	return nil
-}
-
-func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
-	ok := make(chan bool)
-	bytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(token, err)
-		return
-	}
-
-	go func() {
-		b := getBotByToken(token)
-		if b.ID == 0 {
-			logger.Error(token, "missing")
-			return
-		}
-
-		if !b.Active {
-			logger.Error(token, "deactivated")
-			return
-		}
-
-		var update tgbotapi.Update
-
-		err = json.Unmarshal(bytes, &update)
-		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			logger.Error(token, err)
-			return
-		}
-
-		c := getConnection(b.ClientID)
-		if c.MGURL == "" || c.MGToken == "" {
-			logger.Error(token, "MGURL or MGToken is empty")
-			return
-		}
-
-		var client = v1.New(c.MGURL, c.MGToken)
-
-		if update.Message != nil {
-			snd := v1.SendData{
-				Message: v1.SendMessage{
-					Message: v1.Message{
-						ExternalID: strconv.Itoa(update.Message.MessageID),
-						Type:       "text",
-						Text:       update.Message.Text,
-					},
-					SentAt: time.Now(),
-				},
-				User: v1.User{
-					ExternalID: strconv.Itoa(update.Message.From.ID),
-					Nickname:   update.Message.From.UserName,
-					Firstname:  update.Message.From.FirstName,
-				},
-				Channel: b.Channel,
-			}
-
-			data, status, err := client.Messages(snd)
-			if err != nil {
-				logger.Error(token, err.Error(), status, data)
-				ok <- false
-				return
-			}
-		}
-
-		if update.EditedMessage != nil {
-			snd := v1.UpdateData{
-				Message: v1.UpdateMessage{
-					Message: v1.Message{
-						ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
-						Type:       "text",
-						Text:       update.EditedMessage.Text,
-					},
-				},
-				Channel: b.Channel,
-			}
-
-			data, status, err := client.UpdateMessages(snd)
-			if err != nil {
-				logger.Error(token, err.Error(), status, data)
-				ok <- false
-				return
-			}
-		}
-
-		ok <- true
-	}()
-
-	if <-ok {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("SendMessage"))
-	} else {
-		w.WriteHeader(http.StatusBadRequest)
-	}
 }
