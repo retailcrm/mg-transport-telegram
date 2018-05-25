@@ -21,6 +21,15 @@ run: migrate
 	@echo "==> Running"
 	@${BIN} --config $(CONFIG_FILE) run
 
+test: deps fmt
+	@echo "==> Running tests"
+	@cd $(SRC_DIR) && go test ./... -v -cpu 2 -cover -race
+
+jenkins_test: deps
+	@echo "==> Running tests (result in test-report.xml)"
+	@go get -v -u github.com/jstemmer/go-junit-report
+	@cd $(SRC_DIR) && go test ./... -v -cpu 2 -cover -race | go-junit-report -set-exit-code > $(SRC_DIR)/test-report.xml
+
 fmt:
 	@echo "==> Running gofmt"
 	@gofmt -l -s -w $(SRC_DIR)
@@ -36,7 +45,7 @@ migrate: build
 	@${BIN} --config $(CONFIG_FILE) migrate -p ./migrations/
 
 migrate_test: build
-	@${BIN} --config $(CONFIG_TEST_FILE) migrate
+	@${BIN} --config $(CONFIG_TEST_FILE) migrate ./migrations/
 
 migrate_down: build
 	@${BIN} --config $(CONFIG_FILE) migrate -v down

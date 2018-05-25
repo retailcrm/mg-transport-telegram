@@ -9,7 +9,6 @@ services:
             POSTGRES_DATABASE: mg_telegram_test
         ports:
             - ${POSTGRES_ADDRESS:-127.0.0.1:5450}:${POSTGRES_PORT:-5450}
-        command: -p ${POSTGRES_PORT:-5450}
 
     mg_telegram_test:
         image: golang:1.9.3-stretch
@@ -19,3 +18,5 @@ services:
             - ./:/mg_telegram/
         links:
             - postgres_test
+        ports:
+            - ${MG_TELEGRAM_ADDRESS:-3002}:3002

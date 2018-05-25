@@ -3,7 +3,7 @@ database:
 
 http_server:
   host: ~
-  listen: :3001
+  listen: :3002
 
 sentry_dsn: ~
 
