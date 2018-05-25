@@ -7,6 +7,11 @@ pipeline {
         disableConcurrentBuilds()
     }
 
+    environment {
+        HUB_URL  = credentials('docker_hub_url')
+        HUB_PATH = credentials('docker_hub_path')
+    }
+
     stages {
         stage('Prepare') {
             steps {
@@ -38,8 +43,6 @@ pipeline {
                     credentialsId: 'docker-hub-credentials',
                     usernameVariable: 'HUB_USER',
                     passwordVariable: 'HUB_PASS'
-                    urlVariable: 'HUB_URL'
-                    pathVariable: 'HUB_PATH'
                 )]) {
                     sh 'echo ${HUB_PASS} | docker login -u ${HUB_USER} --password-stdin ${HUB_URL}'
                 }
