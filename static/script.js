@@ -24,7 +24,10 @@ $("#add-bot").on("submit", function(e) {
     e.preventDefault();
     send(
         $(this).attr('action'),
-        formDataToObj($(this).serializeArray()),
+        {
+            connectionId: parseInt($(this).find('input[name=connectionId]').val()),
+            token: $(this).find('input[name=token]').val(),
+        },
         function (data) {
             let bots = $("#bots");
             if (bots.hasClass("hide")) {
@@ -42,7 +45,7 @@ $(document).on("click", ".activity-bot", function(e) {
         {
             token: but.attr("data-token"),
             active: (but.attr("data-activity") === 'true'),
-            clientId: $('input[name=clientId]').val(),
+            connectionId: parseInt($('input[name=connectionId]').val()),
         },
         function () {
             if (but.attr("data-activity") === 'true') {

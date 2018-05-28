@@ -26,15 +26,15 @@ func (c *Connection) saveConnection() error {
 	return orm.DB.Model(c).Where("client_id = ?", c.ClientID).Update(c).Error
 }
 
+func (c *Connection) createBot(b Bot) error {
+	return orm.DB.Model(c).Association("Bots").Append(&b).Error
+}
+
 func getBotByToken(token string) *Bot {
 	var bot Bot
 	orm.DB.First(&bot, "token = ?", token)
 
 	return &bot
-}
-
-func (b *Bot) createBot() error {
-	return orm.DB.Create(b).Error
 }
 
 func (b *Bot) setBotActivity() error {
@@ -49,5 +49,13 @@ func getBotChannelByToken(token string) uint64 {
 }
 
 func (b *Bots) getBotsByClientID(uid string) error {
-	return orm.DB.Where("client_id = ?", uid).Find(b).Error
+	var c Connection
+	return orm.DB.First(&c, "client_id = ?", uid).Association("Bots").Find(b).Error
+}
+
+func getConnectionById(id int) *Connection {
+	var connection Connection
+	orm.DB.First(&connection, "id = ?", id)
+
+	return &connection
 }

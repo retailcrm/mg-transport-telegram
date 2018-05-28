@@ -45,7 +45,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		return
 	}
 
-	c := getConnection(b.ClientID)
+	c := getConnectionById(b.ConnectionID)
 	if c.MGURL == "" || c.MGToken == "" {
 		logger.Error(token, "MGURL or MGToken is empty")
 		w.WriteHeader(http.StatusBadRequest)

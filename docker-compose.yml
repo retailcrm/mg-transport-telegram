@@ -16,6 +16,7 @@ services:
         user: ${UID:-1000}:${GID:-1000}
         volumes:
             - ./:/mg_telegram/
+            - ./static:/static/
         links:
             - postgres
         ports:
