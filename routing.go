@@ -557,6 +557,81 @@ func validateCrmSettings(c Connection) error {
 	return nil
 }
 
+func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err)
+		return
+	}
+
+	var msg EventMessage
+	err = json.Unmarshal(bytes, &msg)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err)
+		return
+	}
+
+	b := getBotByChannel(msg.ChannelID)
+	if b.ID == 0 {
+		logger.Error(msg.ChannelID, "missing")
+		return
+	}
+
+	if !b.Active {
+		logger.Error(msg.ChannelID, "deactivated")
+		return
+	}
+
+	bot, err := tgbotapi.NewBotAPI(b.Token)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err)
+	}
+
+	bot.Debug = true
+
+	if msg.Type == "message_sent" {
+		msg, err := bot.Send(tgbotapi.NewMessage(msg.ChatID, msg.Message))
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		logger.Debugf("%v", msg)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Message sent"))
+	}
+
+	if msg.Type == "message_updated" {
+		msg, err := bot.Send(tgbotapi.NewEditMessageText(msg.ChatID, msg.ExternalID, msg.Message))
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		logger.Debugf("%v", msg)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Message updated"))
+	}
+
+	if msg.Type == "message_deleted" {
+		msg, err := bot.Send(tgbotapi.NewDeleteMessage(msg.ChatID, msg.ExternalID))
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		logger.Debugf("%v", msg)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Message deleted"))
+	}
+}
+
 func getAPIClient(url, key string) (*v5.Client, error, int) {
 	client := v5.New(url, key)
 

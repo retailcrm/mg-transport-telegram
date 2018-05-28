@@ -15,6 +15,7 @@ import (
 
 func setTransportRoutes() {
 	http.HandleFunc("/telegram/", makeHandler(telegramWebhookHandler))
+	http.HandleFunc("/webhook/", mgWebhookHandler)
 }
 
 // GetBotInfo function

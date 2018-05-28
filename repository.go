@@ -37,6 +37,17 @@ func getBotByToken(token string) *Bot {
 	return &bot
 }
 
+func getBotByChannel(ch uint64) *Bot {
+	var bot Bot
+	orm.DB.First(&bot, "channel = ?", ch)
+
+	return &bot
+}
+
+func (b *Bot) createBot() error {
+	return orm.DB.Create(b).Error
+}
+
 func (b *Bot) setBotActivity() error {
 	return orm.DB.Model(b).Where("token = ?", b.Token).Update("Active", !b.Active).Error
 }
