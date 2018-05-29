@@ -12,6 +12,7 @@ import (
 
 func init() {
 	c := Connection{
+		ID:       1,
 		ClientID: "123123",
 		APIKEY:   "test",
 		APIURL:   "https://test.retailcrm.ru",
@@ -69,7 +70,7 @@ func TestRouting_addBotHandler(t *testing.T) {
 		Reply(201).
 		BodyString(`{"id": 1}`)
 
-	req, err := http.NewRequest("POST", "/add-bot/", strings.NewReader(`{"token": "123123:Qwerty", "clientId": "123123"}`))
+	req, err := http.NewRequest("POST", "/add-bot/", strings.NewReader(`{"token": "123123:Qwerty", "connectionId": 1}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +96,7 @@ func TestRouting_activityBotHandler(t *testing.T) {
 		Reply(200).
 		BodyString(`{"id": 1}`)
 
-	req, err := http.NewRequest("POST", "/activity-bot/", strings.NewReader(`{"token": "123123:Qwerty", "active": false, "clientId": "123123"}`))
+	req, err := http.NewRequest("POST", "/activity-bot/", strings.NewReader(`{"token": "123123:Qwerty", "active": false, "connectionId": 1}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,6 +128,13 @@ func TestRouting_settingsHandler(t *testing.T) {
 }
 
 func TestRouting_saveHandler(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://test.retailcrm.ru").
+		Get("/api/credentials").
+		Reply(200).
+		BodyString(`{"success": true, "credentials": ["/api/integration-modules/{code}", "/api/integration-modules/{code}/edit"]}`)
+
 	req, err := http.NewRequest("POST", "/save/",
 		strings.NewReader(
 			`{"clientId": "123123", 

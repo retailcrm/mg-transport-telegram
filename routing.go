@@ -283,6 +283,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 	p := getConnection(uid)
 	if p.ID == 0 {
 		http.Redirect(w, r, "/", http.StatusFound)
+		return
 	}
 
 	bots := Bots{}
