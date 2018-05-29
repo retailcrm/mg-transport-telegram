@@ -123,3 +123,79 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err)
+		return
+	}
+
+	var msg v1.WebhookRequest
+	err = json.Unmarshal(bytes, &msg)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err)
+		return
+	}
+
+	uid, _ := strconv.Atoi(msg.Data.ExternalMessageID)
+
+	b := getBotByChannel(msg.Data.ChannelID)
+	if b.ID == 0 {
+		logger.Error(msg.Data.ChannelID, "missing")
+		return
+	}
+
+	if !b.Active {
+		logger.Error(msg.Data.ChannelID, "deactivated")
+		return
+	}
+
+	bot, err := tgbotapi.NewBotAPI(b.Token)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(err)
+		return
+	}
+
+	if msg.Type == "message_sent" {
+		msg, err := bot.Send(tgbotapi.NewMessage(msg.Data.ExternalChatID, msg.Data.Content))
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		logger.Debugf("%v", msg)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Message sent"))
+	}
+
+	if msg.Type == "message_updated" {
+		msg, err := bot.Send(tgbotapi.NewEditMessageText(msg.Data.ExternalChatID, uid, msg.Data.Content))
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		logger.Debugf("%v", msg)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Message updated"))
+	}
+
+	if msg.Type == "message_deleted" {
+		msg, err := bot.Send(tgbotapi.NewDeleteMessage(msg.Data.ExternalChatID, uid))
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		logger.Debugf("%v", msg)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Message deleted"))
+	}
+}

@@ -7,7 +7,7 @@ BIN=$(ROOT_DIR)/bin/mg-telegram
 REVISION=$(shell git describe --tags 2>/dev/null || git log --format="v0.0-%h" -n 1 || echo "v0.0-unknown")
 
 ifndef GOPATH
-    $(error GOPATH must be defined)
+	$(error GOPATH must be defined)
 endif
 
 export GOPATH := $(GOPATH):$(ROOT_DIR)
@@ -22,8 +22,9 @@ run: migrate
 	@${BIN} --config $(CONFIG_FILE) run
 
 test: deps fmt
-	@echo "==> Running tests"
-	@cd $(SRC_DIR) && go test ./... -v -cpu 2 -cover -race
+	@echo "==> Running tests (result in test-report.xml)"
+	@go get -v -u github.com/jstemmer/go-junit-report
+	@cd $(SRC_DIR) && go test ./... -v -cpu 2 -cover -race | go-junit-report -set-exit-code > $(SRC_DIR)/test-report.xml
 
 jenkins_test: deps
 	@echo "==> Running tests (result in test-report.xml)"

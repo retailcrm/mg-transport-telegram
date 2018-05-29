@@ -3,7 +3,7 @@ FROM golang:1.9.3-stretch
 WORKDIR /
 ADD ./bin/mg-telegram /
 ADD ./templates/ /templates/
-ADD ./web/ /web/
+ADD ./static/ /static/
 ADD ./translate/ /translate/
 ADD ./migrations/ /migrations/
 

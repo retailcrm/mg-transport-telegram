@@ -1,7 +1,7 @@
 version: '2.1'
 
 services:
-    postgres:
+    postgres_test:
         image: postgres:9.6
         environment:
             POSTGRES_USER: mg_telegram_test
@@ -10,13 +10,14 @@ services:
         ports:
             - ${POSTGRES_ADDRESS:-127.0.0.1:5450}:${POSTGRES_PORT:-5450}
 
-    mg_telegram:
+    mg_telegram_test:
         image: golang:1.9.3-stretch
         working_dir: /mg_telegram
         user: ${UID:-1000}:${GID:-1000}
         volumes:
             - ./:/mg_telegram/
         links:
-            - postgres
+            - postgres_test
         ports:
             - ${MG_TELEGRAM_ADDRESS:-3002}:3002
+        command: make migrate_test
