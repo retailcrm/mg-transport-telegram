@@ -8,14 +8,15 @@ services:
             POSTGRES_PASSWORD: mg_telegram
             POSTGRES_DATABASE: mg_telegram
         ports:
-            - ${POSTGRES_ADDRESS:-127.0.0.1:5434}:5432
+            - ${POSTGRES_ADDRESS:-127.0.0.1:5434}:${POSTGRES_PORT:-5432}
 
     mg_telegram:
         image: golang:1.9.3-stretch
-        working_dir: /mg_telegram
+        working_dir: /mgtg
         user: ${UID:-1000}:${GID:-1000}
         volumes:
-            - ./:/mg_telegram/
+            - ./:/mgtg
+            - ./static:/static/
         links:
             - postgres
         ports:

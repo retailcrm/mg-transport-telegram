@@ -3,8 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/getsentry/raven-go"
 	"github.com/jessevdk/go-flags"
+
+	"github.com/op/go-logging"
 )
 
 // Options struct
@@ -14,12 +15,13 @@ type Options struct {
 
 const transport = "mg-telegram"
 
-var options Options
-var parser = flags.NewParser(&options, flags.Default)
-
-func init() {
-	raven.SetDSN(config.SentryDSN)
-}
+var (
+	config  *TransportConfig
+	orm     *Orm
+	logger  *logging.Logger
+	options Options
+	parser  = flags.NewParser(&options, flags.Default)
+)
 
 func main() {
 	if _, err := parser.Parse(); err != nil {

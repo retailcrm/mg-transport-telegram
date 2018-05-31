@@ -1,5 +1,5 @@
-gin-bin
 config.yml
+config_test.yml
 .idea/
 /bin/*
-mg-telegram
+*.xml

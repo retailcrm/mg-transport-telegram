@@ -8,8 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"strconv"
-	"time"
+	"strings"
 
 	"github.com/getsentry/raven-go"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
@@ -21,7 +20,6 @@ import (
 )
 
 var (
-	templates = template.Must(template.ParseFiles("templates/layout.html", "templates/form.html", "templates/home.html"))
 	validPath = regexp.MustCompile(`^/(save|settings|telegram)/([a-zA-Z0-9-:_+]+)$`)
 	localizer *i18n.Localizer
 	bundle    = &i18n.Bundle{DefaultLanguage: language.English}
@@ -62,6 +60,8 @@ func setWrapperRoutes() {
 	http.HandleFunc("/save/", saveHandler)
 	http.HandleFunc("/create/", createHandler)
 	http.HandleFunc("/actions/activity", activityHandler)
+	http.HandleFunc("/add-bot/", addBotHandler)
+	http.HandleFunc("/activity-bot/", activityBotHandler)
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, c interface{}) {
@@ -100,7 +100,7 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 	}{
 		&p,
 		map[string]interface{}{
-			"ButConnect": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "but_connect"}),
+			"ButtonSave": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "button_save"}),
 			"ApiKey":     localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "api_key"}),
 			"Title":      localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "title"}),
 		},
@@ -114,6 +114,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
+		logger.Error(err.Error())
 		return
 	}
 
@@ -123,6 +124,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
+		logger.Error(err.Error())
 		return
 	}
 
@@ -131,8 +133,15 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cl := getBotByToken(b.Token)
-	if cl.ID != 0 {
+	cb, err := getConnectionByBotToken(b.Token)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
+		logger.Error(err.Error())
+		return
+	}
+
+	if len(cb.Bots) != 0 {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "bot_already_created"}), http.StatusBadRequest)
 		return
 	}
@@ -146,28 +155,20 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 
 	bot.Debug = false
 
-	_, err = bot.SetWebhook(tgbotapi.NewWebhook("https://" + config.HTTPServer.Host + "/telegram/" + bot.Token))
+	wr, err := bot.SetWebhook(tgbotapi.NewWebhook("https://" + config.HTTPServer.Host + "/telegram/" + bot.Token))
 	if err != nil {
 		logger.Error(b.Token, err.Error())
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_webhook"}), http.StatusBadRequest)
 		return
 	}
 
-	_, err = bot.GetWebhookInfo()
-	if err != nil {
-		logger.Error(b.Token, err.Error())
+	if !wr.Ok {
+		logger.Error(b.Token, wr.ErrorCode, wr.Result)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_webhook"}), http.StatusBadRequest)
 		return
 	}
 
 	b.Name = GetBotName(bot)
-
-	c := getConnection(b.ClientID)
-	if c.MGURL == "" || c.MGToken == "" {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
-		logger.Error(b.ClientID, "MGURL or MGToken is empty")
-		return
-	}
 
 	ch := v1.Channel{
 		Type: "telegram",
@@ -179,22 +180,22 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	var client = v1.New(c.MGURL, c.MGToken)
+	var client = v1.New(cb.MGURL, cb.MGToken)
 	data, status, err := client.ActivateTransportChannel(ch)
 	if status != http.StatusCreated {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activating_channel"}), http.StatusBadRequest)
-		logger.Error(c.APIURL, status, err.Error(), data)
+		logger.Error(cb.APIURL, status, err.Error(), data)
 		return
 	}
 
 	b.Channel = data.ChannelID
 	b.Active = true
 
-	err = b.createBot()
+	err = cb.createBot(b)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
-		logger.Error(c.APIURL, err.Error())
+		logger.Error(cb.APIURL, err.Error())
 		return
 	}
 
@@ -202,7 +203,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
-		logger.Error(c.APIURL, err.Error())
+		logger.Error(cb.APIURL, err.Error())
 		return
 	}
 
@@ -215,6 +216,7 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
+		logger.Error(err.Error())
 		return
 	}
 
@@ -224,6 +226,14 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
+		logger.Error(err.Error())
+		return
+	}
+
+	c := getConnectionById(b.ConnectionID)
+	if c.MGURL == "" || c.MGToken == "" {
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
+		logger.Error(b.ID, "MGURL or MGToken is empty")
 		return
 	}
 
@@ -238,34 +248,28 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	c := getConnection(b.ClientID)
-	if c.MGURL == "" || c.MGToken == "" {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
-		logger.Error(b.ClientID, "MGURL or MGToken is empty")
-		return
-	}
-
 	var client = v1.New(c.MGURL, c.MGToken)
 
 	if b.Active {
 		data, status, err := client.DeactivateTransportChannel(ch.ID)
 		if status > http.StatusOK {
 			http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_deactivating_channel"}), http.StatusBadRequest)
-			logger.Error(b.ClientID, status, err.Error(), data)
+			logger.Error(b.ID, status, err.Error(), data)
 			return
 		}
 	} else {
 		data, status, err := client.ActivateTransportChannel(ch)
 		if status > http.StatusCreated {
 			http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activating_channel"}), http.StatusBadRequest)
-			logger.Error(b.ClientID, status, err.Error(), data)
+			logger.Error(b.ID, status, err.Error(), data)
 			return
 		}
 	}
 
 	err = b.setBotActivity()
 	if err != nil {
-		logger.Error(b.ClientID, err.Error())
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(b.ID, err.Error())
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
 		return
 	}
@@ -279,15 +283,10 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 	p := getConnection(uid)
 	if p.ID == 0 {
 		http.Redirect(w, r, "/", http.StatusFound)
-	}
-
-	bots := Bots{}
-	err := bots.getBotsByClientID(uid)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
 		return
 	}
+
+	bots := p.getBotsByClientID()
 
 	res := struct {
 		Conn   *Connection
@@ -297,7 +296,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 		p,
 		bots,
 		map[string]interface{}{
-			"ButConnect":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "but_connect"}),
+			"ButtonSave":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "button_save"}),
 			"ApiKey":        localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "api_key"}),
 			"TabSettings":   localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_settings"}),
 			"TabBots":       localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_bots"}),
@@ -331,10 +330,16 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = validate(c)
+	err = validateCrmSettings(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		logger.Error(c.APIURL, err.Error())
+		return
+	}
+
+	_, err, code := getAPIClient(c.APIURL, c.APIKEY)
+	if err != nil {
+		http.Error(w, err.Error(), code)
 		return
 	}
 
@@ -357,6 +362,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
+		logger.Error(err.Error())
 		return
 	}
 
@@ -366,12 +372,13 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 
 	c.ClientID = GenerateToken()
 
-	err = validate(c)
+	err = validateCrmSettings(c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		logger.Error(c.APIURL, err.Error())
@@ -384,19 +391,9 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := v5.New(c.APIURL, c.APIKEY)
-
-	cr, status, errr := client.APICredentials()
-	if errr.RuntimeErr != nil {
-		raven.CaptureErrorAndWait(errr.RuntimeErr, nil)
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusInternalServerError)
-		logger.Error(c.APIURL, status, errr.RuntimeErr, cr)
-		return
-	}
-
-	if !cr.Success {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_url_key"}), http.StatusBadRequest)
-		logger.Error(c.APIURL, status, errr.ApiErr, cr)
+	client, err, code := getAPIClient(c.APIURL, c.APIKEY)
+	if err != nil {
+		http.Error(w, err.Error(), code)
 		return
 	}
 
@@ -407,7 +404,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		Name:            "Telegram",
 		ClientID:        c.ClientID,
 		Logo: fmt.Sprintf(
-			"https://%s/web/telegram_logo.svg",
+			"https://%s/static/telegram_logo.svg",
 			config.HTTPServer.Host,
 		),
 		BaseURL: fmt.Sprintf(
@@ -452,6 +449,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_connection"}), http.StatusInternalServerError)
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 
@@ -466,7 +464,8 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	jss, err := json.Marshal(res)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_connection"}), http.StatusBadRequest)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_connection"}), http.StatusInternalServerError)
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 
@@ -544,7 +543,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonString)
 }
 
-func validate(c Connection) error {
+func validateCrmSettings(c Connection) error {
 	if c.APIURL == "" || c.APIKEY == "" {
 		return errors.New(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "missing_url_key"}))
 	}
@@ -556,97 +555,54 @@ func validate(c Connection) error {
 	return nil
 }
 
-func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
-	ok := make(chan bool)
-	bytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(token, err)
-		return
+func getAPIClient(url, key string) (*v5.Client, error, int) {
+	client := v5.New(url, key)
+
+	cr, status, errr := client.APICredentials()
+	if errr.RuntimeErr != nil {
+		raven.CaptureErrorAndWait(errr.RuntimeErr, nil)
+		logger.Error(url, status, errr.RuntimeErr, cr)
+		return nil, errors.New(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"})), http.StatusInternalServerError
+
 	}
 
-	go func() {
-		b := getBotByToken(token)
-		if b.ID == 0 {
-			logger.Error(token, "missing")
-			return
-		}
-
-		if !b.Active {
-			logger.Error(token, "deactivated")
-			return
-		}
-
-		var update tgbotapi.Update
-
-		err = json.Unmarshal(bytes, &update)
-		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			logger.Error(token, err)
-			return
-		}
-
-		c := getConnection(b.ClientID)
-		if c.MGURL == "" || c.MGToken == "" {
-			logger.Error(token, "MGURL or MGToken is empty")
-			return
-		}
-
-		var client = v1.New(c.MGURL, c.MGToken)
-
-		if update.Message != nil {
-			snd := v1.SendData{
-				Message: v1.SendMessage{
-					Message: v1.Message{
-						ExternalID: strconv.Itoa(update.Message.MessageID),
-						Type:       "text",
-						Text:       update.Message.Text,
-					},
-					SentAt: time.Now(),
-				},
-				User: v1.User{
-					ExternalID: strconv.Itoa(update.Message.From.ID),
-					Nickname:   update.Message.From.UserName,
-					Firstname:  update.Message.From.FirstName,
-				},
-				Channel: b.Channel,
-			}
-
-			data, status, err := client.Messages(snd)
-			if err != nil {
-				logger.Error(token, err.Error(), status, data)
-				ok <- false
-				return
-			}
-		}
-
-		if update.EditedMessage != nil {
-			snd := v1.UpdateData{
-				Message: v1.UpdateMessage{
-					Message: v1.Message{
-						ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
-						Type:       "text",
-						Text:       update.EditedMessage.Text,
-					},
-				},
-				Channel: b.Channel,
-			}
-
-			data, status, err := client.UpdateMessages(snd)
-			if err != nil {
-				logger.Error(token, err.Error(), status, data)
-				ok <- false
-				return
-			}
-		}
-
-		ok <- true
-	}()
-
-	if <-ok {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("SendMessage"))
-	} else {
-		w.WriteHeader(http.StatusBadRequest)
+	if !cr.Success {
+		logger.Error(url, status, errr.ApiErr, cr)
+		return nil, errors.New(localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_url_key"})), http.StatusBadRequest
 	}
+
+	if res := checkCredentials(cr.Credentials); len(res) != 0 {
+		logger.Error(url, status, res)
+		return nil,
+			errors.New(localizer.MustLocalize(&i18n.LocalizeConfig{
+				MessageID: "missing_credentials",
+				TemplateData: map[string]interface{}{
+					"Credentials": strings.Join(res, ", "),
+				},
+			})),
+			http.StatusBadRequest
+	}
+
+	return client, nil, 0
+}
+
+func checkCredentials(credential []string) []string {
+	rc := []string{
+		"/api/integration-modules/{code}",
+		"/api/integration-modules/{code}/edit",
+	}
+
+	for kn, vn := range rc {
+		for _, vc := range credential {
+			if vn == vc {
+				if len(rc) == 1 {
+					rc = rc[:0]
+					break
+				}
+				rc = append(rc[:kn], rc[kn+1:]...)
+			}
+		}
+	}
+
+	return rc
 }

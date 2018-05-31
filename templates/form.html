@@ -9,7 +9,7 @@
         <div id="tab1" class="col s12">
             <div class="row indent-top">
                 <form id="save" class="tab-el-center" action="/save/" method="POST">
-                    <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
+                    <input name="connectionId" type="hidden" value="{{.Conn.ID}}">
                     <div class="row">
                         <div class="input-field col s12">
                             <input placeholder="API Url" id="api_url" name="api_url" type="text" class="validate" value="{{.Conn.APIURL}}">
@@ -23,7 +23,7 @@
                     <div class="row">
                         <div class="input-field col s12 center-align">
                             <button class="btn waves-effect waves-light light-blue darken-1" type="submit" name="action">
-                                {{.Locale.ButConnect}}
+                                {{.Locale.ButtonSave}}
                                 <i class="material-icons right">sync</i>
                             </button>
                         </div>
@@ -34,7 +34,7 @@
         <div id="tab2" class="col s12">
             <div class="row indent-top">
                 <form id="add-bot" class="tab-el-center" action="/add-bot/" method="POST">
-                    <input name="clientId" type="hidden" value="{{.Conn.ClientID}}">
+                    <input name="connectionId" type="hidden" value="{{.Conn.ID}}">
                     <div class="row">
                         <div class="input-field col s12">
                             <input placeholder="{{.Locale.TableToken}}" id="token" name="token" type="text" class="validate">

@@ -1,5 +1,7 @@
 package main
 
+import "github.com/jinzhu/gorm"
+
 func getConnection(uid string) *Connection {
 	var connection Connection
 	orm.DB.First(&connection, "client_id = ?", uid)
@@ -26,15 +28,29 @@ func (c *Connection) saveConnection() error {
 	return orm.DB.Model(c).Where("client_id = ?", c.ClientID).Update(c).Error
 }
 
-func getBotByToken(token string) *Bot {
-	var bot Bot
-	orm.DB.First(&bot, "token = ?", token)
-
-	return &bot
+func (c *Connection) createBot(b Bot) error {
+	return orm.DB.Model(c).Association("Bots").Append(&b).Error
 }
 
-func (b *Bot) createBot() error {
-	return orm.DB.Create(b).Error
+func getConnectionByBotToken(token string) (*Connection, error) {
+	var c Connection
+	err := orm.DB.Where("active = ?", true).
+		Preload("Bots", "token = ?", token).
+		First(&c).Error
+	if gorm.IsRecordNotFoundError(err) {
+		return &c, nil
+	} else {
+		return &c, err
+	}
+
+	return &c, nil
+}
+
+func getBotByChannel(ch uint64) *Bot {
+	var bot Bot
+	orm.DB.First(&bot, "channel = ?", ch)
+
+	return &bot
 }
 
 func (b *Bot) setBotActivity() error {
@@ -48,6 +64,19 @@ func getBotChannelByToken(token string) uint64 {
 	return b.Channel
 }
 
-func (b *Bots) getBotsByClientID(uid string) error {
-	return orm.DB.Where("client_id = ?", uid).Find(b).Error
+func (c Connection) getBotsByClientID() Bots {
+	var b Bots
+	err := orm.DB.Model(c).Association("Bots").Find(&b).Error
+	if err != nil {
+		logger.Error(err)
+	}
+
+	return b
+}
+
+func getConnectionById(id int) *Connection {
+	var connection Connection
+	orm.DB.First(&connection, "id = ?", id)
+
+	return &connection
 }

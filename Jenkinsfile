@@ -16,14 +16,14 @@ pipeline {
         stage('Prepare') {
             steps {
                 sh 'cp config_test.yml.dist config_test.yml'
-                compose 'up -d --build postgres'
-                compose 'run --rm mg_telegram make migrate_test'
+                compose 'up -d --build postgres_test'
+                compose 'run --rm mg_telegram_test make migrate_test'
             }
         }
 
         stage('Tests') {
             steps {
-               compose 'run --rm --no-deps mg_telegram make jenkins_test'
+               compose 'run --rm mg_telegram_test make jenkins_test'
             }
 
             post {

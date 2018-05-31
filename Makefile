@@ -3,11 +3,11 @@ SRC_DIR=$(ROOT_DIR)
 MIGRATIONS_DIR=$(ROOT_DIR)/migrations
 CONFIG_FILE=$(ROOT_DIR)/config.yml
 CONFIG_TEST_FILE=$(ROOT_DIR)/config_test.yml
-BIN=$(ROOT_DIR)/bin/mg-telegram
+BIN=$(ROOT_DIR)/bin/transport
 REVISION=$(shell git describe --tags 2>/dev/null || git log --format="v0.0-%h" -n 1 || echo "v0.0-unknown")
 
 ifndef GOPATH
-    $(error GOPATH must be defined)
+	$(error GOPATH must be defined)
 endif
 
 export GOPATH := $(GOPATH):$(ROOT_DIR)
@@ -23,7 +23,7 @@ run: migrate
 
 test: deps fmt
 	@echo "==> Running tests"
-	@cd $(SRC_DIR) && go test ./... -v -cpu 2 -cover -race
+	@cd $(SRC_DIR) && go test ./... -v -cpu 2
 
 jenkins_test: deps
 	@echo "==> Running tests (result in test-report.xml)"
@@ -42,10 +42,10 @@ deps:
 	@go get -d -v $(DEPS)
 
 migrate: build
-	@${BIN} --config $(CONFIG_FILE) migrate -p ./migrations/
+	${BIN} --config $(CONFIG_FILE) migrate -p $(MIGRATIONS_DIR)
 
 migrate_test: build
-	@${BIN} --config $(CONFIG_TEST_FILE) migrate ./migrations/
+	@${BIN} --config $(CONFIG_TEST_FILE) migrate -p $(MIGRATIONS_DIR)
 
 migrate_down: build
 	@${BIN} --config $(CONFIG_FILE) migrate -v down
