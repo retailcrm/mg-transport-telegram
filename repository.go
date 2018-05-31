@@ -32,18 +32,16 @@ func (c *Connection) createBot(b Bot) error {
 	return orm.DB.Model(c).Association("Bots").Append(&b).Error
 }
 
-func getConnectionByBotToken(token string) (*Connection, error) {
-	var c Connection
-	err := orm.DB.Where("active = ?", true).
-		Preload("Bots", "token = ?", token).
-		First(&c).Error
+func getBotByToken(token string) (*Bot, error) {
+	var bot Bot
+	err := orm.DB.First(&bot, "token = ?", token).Error
 	if gorm.IsRecordNotFoundError(err) {
-		return &c, nil
+		return &bot, nil
 	} else {
-		return &c, err
+		return &bot, err
 	}
 
-	return &c, nil
+	return &bot, nil
 }
 
 func getBotByChannel(ch uint64) *Bot {
