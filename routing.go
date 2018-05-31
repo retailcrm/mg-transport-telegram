@@ -180,22 +180,24 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	var client = v1.New(cb.MGURL, cb.MGToken)
+	c := getConnectionById(b.ConnectionID)
+
+	var client = v1.New(c.MGURL, c.MGToken)
 	data, status, err := client.ActivateTransportChannel(ch)
 	if status != http.StatusCreated {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activating_channel"}), http.StatusBadRequest)
-		logger.Error(cb.APIURL, status, err.Error(), data)
+		logger.Error(c.APIURL, status, err.Error(), data)
 		return
 	}
 
 	b.Channel = data.ChannelID
 	b.Active = true
 
-	err = cb.createBot(b)
+	err = c.createBot(b)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
-		logger.Error(cb.APIURL, err.Error())
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 
@@ -203,7 +205,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
-		logger.Error(cb.APIURL, err.Error())
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 

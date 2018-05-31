@@ -21,4 +21,3 @@ services:
             - postgres_test
         ports:
             - ${MG_TELEGRAM_ADDRESS:-3002}:3002
-#        command: make migrate_test
