@@ -7,14 +7,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"sort"
 	"strings"
 	"testing"
 
 	"github.com/h2non/gock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -33,7 +31,7 @@ func init() {
 	}
 
 	c.createConnection()
-	orm.DB.Where("token = 123123:Qwerty").Delete(Bot{})
+	orm.DB.Delete(Bot{}, "token = ?", "123123:Qwerty")
 }
 
 func TestRouting_connectHandler(t *testing.T) {
@@ -53,7 +51,7 @@ func TestRouting_connectHandler(t *testing.T) {
 func TestRouting_addBotHandler(t *testing.T) {
 	defer gock.Off()
 
-	p := url.Values{"url": {"https://test.com/telegram/123123:Qwerty"}}
+	p := url.Values{"url": {"https://" + config.HTTPServer.Host + "/telegram/123123:Qwerty"}}
 
 	gock.New("https://api.telegram.org").
 		Post("/bot123123:Qwerty/getMe").
@@ -70,7 +68,7 @@ func TestRouting_addBotHandler(t *testing.T) {
 	gock.New("https://api.telegram.org").
 		Post("/bot123123:Qwerty/getWebhookInfo").
 		Reply(200).
-		BodyString(`{"ok":true,"result":{"url":"https://test.com/telegram/123123:Qwerty","has_custom_certificate":false,"pending_update_count":0}}`)
+		BodyString(`{"ok":true,"result":{"url":"https://` + config.HTTPServer.Host + `/telegram/123123:Qwerty","has_custom_certificate":false,"pending_update_count":0}}`)
 
 	gock.New("https://test.retailcrm.pro").
 		Post("/api/v1/transport/channels").
@@ -184,39 +182,4 @@ func TestRouting_activityHandler(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
-}
-
-func TestRouting_TranslateLoader(t *testing.T) {
-	type m map[string]string
-	te := [][]string{}
-
-	dt := "translate"
-
-	files, err := ioutil.ReadDir(dt)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, f := range files {
-		ms := m{}
-		if !f.IsDir() {
-			res, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", dt, f.Name()))
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			err = yaml.Unmarshal(res, &ms)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			keys := []string{}
-			for kms := range ms {
-				keys = append(keys, kms)
-			}
-			sort.Strings(keys)
-			te = append(te, keys)
-		}
-	}
-
 }
