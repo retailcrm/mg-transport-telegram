@@ -32,7 +32,7 @@ func GetBotName(bot *tgbotapi.BotAPI) string {
 }
 
 func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
-	c, err := getConnectionByBotToken(token)
+	b, err := getBotByToken(token)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		logger.Error(token, err.Error())
@@ -40,14 +40,21 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		return
 	}
 
-	if len(c.Bots) == 0 {
+	if b.ID == 0 {
 		logger.Error(token, "missing")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if !c.Bots[0].Active {
+	if !b.Active {
 		logger.Error(token, "deactivated")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	c := getConnectionById(b.ConnectionID)
+	if c.MGURL == "" || c.MGToken == "" {
+		logger.Error(token, "MGURL or MGToken is empty")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

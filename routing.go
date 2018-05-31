@@ -133,7 +133,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cb, err := getConnectionByBotToken(b.Token)
+	cl, err := getBotByToken(b.Token)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
@@ -141,7 +141,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(cb.Bots) != 0 {
+	if cl.ID != 0 {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "bot_already_created"}), http.StatusBadRequest)
 		return
 	}
@@ -214,6 +214,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func activityBotHandler(w http.ResponseWriter, r *http.Request) {
+	setLocale(r.Header.Get("Accept-Language"))
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
@@ -475,7 +476,19 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jss)
 }
 
+type ActivityCallback struct {
+	ClientId  string   `json:"clientId"`
+	Activity  Activity `json:"activity"`
+	SystemUrl string   `json:"systemUrl,omitempty"`
+}
+
+type Activity struct {
+	Active bool `json:"active"`
+	Freeze bool `json:"freeze"`
+}
+
 func activityHandler(w http.ResponseWriter, r *http.Request) {
+	setLocale(r.Header.Get("Accept-Language"))
 	w.Header().Set("Content-Type", "application/json")
 	res := Response{Success: false}
 
@@ -494,7 +507,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		res.Error = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_data"})
+		res.Error = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "wrong_data"})
 		jsonString, err := json.Marshal(res)
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
@@ -505,12 +518,12 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var rec Connection
+	var rec ActivityCallback
 
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		res.Error = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_data"})
+		res.Error = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "wrong_data"})
 		jsonString, err := json.Marshal(res)
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
@@ -521,9 +534,12 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := rec.setConnectionActivity(); err != nil {
+	c := getConnection(rec.ClientId)
+	c.Active = rec.Activity.Active
+
+	if err := c.setConnectionActivity(); err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		res.Error = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_data"})
+		res.Error = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "wrong_data"})
 		jsonString, err := json.Marshal(res)
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
