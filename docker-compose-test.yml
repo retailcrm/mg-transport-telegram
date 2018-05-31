@@ -8,16 +8,17 @@ services:
             POSTGRES_PASSWORD: mg_telegram_test
             POSTGRES_DATABASE: mg_telegram_test
         ports:
-            - ${POSTGRES_ADDRESS:-127.0.0.1:5450}:${POSTGRES_PORT:-5450}
+            - ${POSTGRES_ADDRESS:-127.0.0.1:5434}:${POSTGRES_PORT:-5432}
 
     mg_telegram_test:
         image: golang:1.9.3-stretch
-        working_dir: /mg_telegram
+        working_dir: /mgtg
         user: ${UID:-1000}:${GID:-1000}
         volumes:
-            - ./:/mg_telegram/
+            - ./:/mgtg/
+            - ./static:/static/
         links:
             - postgres_test
         ports:
             - ${MG_TELEGRAM_ADDRESS:-3002}:3002
-        command: make migrate_test
+#        command: make migrate_test

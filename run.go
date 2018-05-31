@@ -7,14 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/getsentry/raven-go"
 	_ "github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/source/file"
-)
-
-var (
-	config = LoadConfig("config.yml")
-	orm    = NewDb(config)
-	logger = newLogger()
 )
 
 func init() {
@@ -30,6 +25,11 @@ type RunCommand struct{}
 
 // Execute command
 func (x *RunCommand) Execute(args []string) error {
+	config = LoadConfig(options.Config)
+	orm = NewDb(config)
+	logger = newLogger()
+	raven.SetDSN(config.SentryDSN)
+
 	go start()
 
 	c := make(chan os.Signal, 1)

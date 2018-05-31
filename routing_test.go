@@ -11,6 +11,10 @@ import (
 )
 
 func init() {
+	config = LoadConfig("config_test.yml")
+	orm = NewDb(config)
+	logger = newLogger()
+
 	c := Connection{
 		ID:       1,
 		ClientID: "123123",
