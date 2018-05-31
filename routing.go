@@ -133,15 +133,15 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := getConnectionById(b.ConnectionID)
-	if c.MGURL == "" || c.MGToken == "" {
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "not_found_account"}), http.StatusBadRequest)
-		logger.Error(b.Token, "MGURL or MGToken is empty")
+	cb, err := getConnectionByBotToken(b.Token)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
+		logger.Error(err.Error())
 		return
 	}
 
-	cl := getBotByToken(b.Token)
-	if cl.ID != 0 {
+	if len(cb.Bots) != 0 {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "bot_already_created"}), http.StatusBadRequest)
 		return
 	}
@@ -180,22 +180,22 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	var client = v1.New(c.MGURL, c.MGToken)
+	var client = v1.New(cb.MGURL, cb.MGToken)
 	data, status, err := client.ActivateTransportChannel(ch)
 	if status != http.StatusCreated {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activating_channel"}), http.StatusBadRequest)
-		logger.Error(c.APIURL, status, err.Error(), data)
+		logger.Error(cb.APIURL, status, err.Error(), data)
 		return
 	}
 
 	b.Channel = data.ChannelID
 	b.Active = true
 
-	err = c.createBot(b)
+	err = cb.createBot(b)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
-		logger.Error(c.APIURL, err.Error())
+		logger.Error(cb.APIURL, err.Error())
 		return
 	}
 
@@ -203,7 +203,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_adding_bot"}), http.StatusInternalServerError)
-		logger.Error(c.APIURL, err.Error())
+		logger.Error(cb.APIURL, err.Error())
 		return
 	}
 
@@ -286,13 +286,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 		return
 	}
 
-	bots := Bots{}
-	err := bots.getBotsByClientID(uid)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
-		return
-	}
+	bots := p.getBotsByClientID()
 
 	res := struct {
 		Conn   *Connection
@@ -368,6 +362,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
+		logger.Error(err.Error())
 		return
 	}
 
@@ -377,6 +372,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 
@@ -453,6 +449,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_connection"}), http.StatusInternalServerError)
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 
@@ -468,6 +465,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_creating_connection"}), http.StatusInternalServerError)
+		logger.Error(c.APIURL, err.Error())
 		return
 	}
 

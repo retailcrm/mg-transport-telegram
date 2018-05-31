@@ -1,13 +1,20 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"strings"
 	"testing"
 
 	"github.com/h2non/gock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -26,7 +33,9 @@ func init() {
 	}
 
 	c.createConnection()
+	orm.DB.Where("token = 123123:Qwerty").Delete(Bot{})
 }
+
 func TestRouting_connectHandler(t *testing.T) {
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
@@ -37,11 +46,8 @@ func TestRouting_connectHandler(t *testing.T) {
 	handler := http.HandlerFunc(connectHandler)
 
 	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rr.Code,
+		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
 }
 
 func TestRouting_addBotHandler(t *testing.T) {
@@ -78,15 +84,25 @@ func TestRouting_addBotHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(addBotHandler)
 	handler.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusCreated, rr.Code,
+		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusCreated))
 
-	if rr.Code != http.StatusCreated {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusCreated)
+	bytes, err := ioutil.ReadAll(rr.Body)
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	var res map[string]interface{}
+
+	err = json.Unmarshal(bytes, &res)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, "123123:Qwerty", res["token"])
 }
 
 func TestRouting_activityBotHandler(t *testing.T) {
@@ -109,10 +125,8 @@ func TestRouting_activityBotHandler(t *testing.T) {
 	handler := http.HandlerFunc(activityBotHandler)
 	handler.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rr.Code,
+		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
 }
 
 func TestRouting_settingsHandler(t *testing.T) {
@@ -125,10 +139,8 @@ func TestRouting_settingsHandler(t *testing.T) {
 	handler := http.HandlerFunc(makeHandler(settingsHandler))
 	handler.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rr.Code,
+		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
 }
 
 func TestRouting_saveHandler(t *testing.T) {
@@ -153,79 +165,9 @@ func TestRouting_saveHandler(t *testing.T) {
 	handler := http.HandlerFunc(saveHandler)
 	handler.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rr.Code,
+		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
 }
-
-//
-//func TestRouting_createHandler(t *testing.T) {
-//	defer gock.Off()
-//
-//	gock.New("https://test2.retailcrm.ru").
-//		Get("/api/credentials").
-//		Reply(200).
-//		BodyString(`{"success": true}`)
-//
-//	integrationModule := v5.IntegrationModule{
-//		Code:            transport,
-//		IntegrationCode: transport,
-//		Active:          true,
-//		Name:            "Telegram",
-//		ClientID:        "123",
-//		Logo: fmt.Sprintf(
-//			"https://%s/web/telegram_logo.svg",
-//			config.HTTPServer.Host,
-//		),
-//		BaseURL: fmt.Sprintf(
-//			"https://%s",
-//			config.HTTPServer.Host,
-//		),
-//		AccountURL: fmt.Sprintf(
-//			"https://%s/settings/%s",
-//			config.HTTPServer.Host,
-//			"123",
-//		),
-//		Actions: map[string]string{"activity": "/actions/activity"},
-//		Integrations: &v5.Integrations{
-//			MgTransport: &v5.MgTransport{
-//				WebhookUrl: fmt.Sprintf(
-//					"https://%s/webhook",
-//					config.HTTPServer.Host,
-//				),
-//			},
-//		},
-//	}
-//
-//	updateJSON, _ := json.Marshal(&integrationModule)
-//	p := url.Values{"integrationModule": {string(updateJSON[:])}}
-//
-//	gock.New("https://test2.retailcrm.ru").
-//		Post(fmt.Sprintf("/api/v5/integration-modules/%s/edit", integrationModule.Code)).
-//		MatchType("url").
-//		BodyString(p.Encode()).
-//		MatchHeader("X-API-KEY", "test").
-//		Reply(201).
-//		BodyString(`{"success": true, "info": {"baseUrl": "http://test.te", "token": "test"}}`)
-//
-//	req, err := http.NewRequest("POST", "/create/",
-//		strings.NewReader(
-//			`{"api_url": "https://test2.retailcrm.ru","api_key": "test"}`,
-//		))
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	rr := httptest.NewRecorder()
-//	handler := http.HandlerFunc(createHandler)
-//	handler.ServeHTTP(rr, req)
-//
-//	if rr.Code != http.StatusFound {
-//		t.Errorf("handler returned wrong status code: got %v want %v",
-//			rr.Code, http.StatusFound)
-//	}
-//}
 
 func TestRouting_activityHandler(t *testing.T) {
 	req, err := http.NewRequest("POST", "/actions/activity",
@@ -240,8 +182,41 @@ func TestRouting_activityHandler(t *testing.T) {
 	handler := http.HandlerFunc(activityHandler)
 	handler.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
+	assert.Equal(t, http.StatusOK, rr.Code,
+		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
+}
+
+func TestRouting_TranslateLoader(t *testing.T) {
+	type m map[string]string
+	te := [][]string{}
+
+	dt := "translate"
+
+	files, err := ioutil.ReadDir(dt)
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	for _, f := range files {
+		ms := m{}
+		if !f.IsDir() {
+			res, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", dt, f.Name()))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = yaml.Unmarshal(res, &ms)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			keys := []string{}
+			for kms := range ms {
+				keys = append(keys, kms)
+			}
+			sort.Strings(keys)
+			te = append(te, keys)
+		}
+	}
+
 }

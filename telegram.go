@@ -1,10 +1,9 @@
 package main
 
 import (
-	"net/http"
-
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -33,22 +32,22 @@ func GetBotName(bot *tgbotapi.BotAPI) string {
 }
 
 func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
-	b := getBotByToken(token)
-	if b.ID == 0 {
+	c, err := getConnectionByBotToken(token)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		logger.Error(token, err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(c.Bots) == 0 {
 		logger.Error(token, "missing")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if !b.Active {
+	if !c.Bots[0].Active {
 		logger.Error(token, "deactivated")
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	c := getConnectionById(b.ConnectionID)
-	if c.MGURL == "" || c.MGToken == "" {
-		logger.Error(token, "MGURL or MGToken is empty")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -90,11 +89,12 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 				Lastname:   update.Message.From.LastName,
 				Language:   update.Message.From.LanguageCode,
 			},
-			Channel: b.Channel,
+			Channel: c.Bots[0].Channel,
 		}
 
 		data, st, err := client.Messages(snd)
 		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(token, err.Error(), st, data)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -110,11 +110,12 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 					Text:       update.EditedMessage.Text,
 				},
 			},
-			Channel: b.Channel,
+			Channel: c.Bots[0].Channel,
 		}
 
 		data, st, err := client.UpdateMessages(snd)
 		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(token, err.Error(), st, data)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -163,6 +164,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	if msg.Type == "message_sent" {
 		msg, err := bot.Send(tgbotapi.NewMessage(msg.Data.ExternalChatID, msg.Data.Content))
 		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -176,6 +178,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	if msg.Type == "message_updated" {
 		msg, err := bot.Send(tgbotapi.NewEditMessageText(msg.Data.ExternalChatID, uid, msg.Data.Content))
 		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -189,6 +192,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	if msg.Type == "message_deleted" {
 		msg, err := bot.Send(tgbotapi.NewDeleteMessage(msg.Data.ExternalChatID, uid))
 		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
