@@ -153,7 +153,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if config.Debug {
-		logger.Debugf("mgWebhookHandler: %v", string(bytes))
+		logger.Debugf("mgWebhookHandler request: %v", string(bytes))
 	}
 
 	var msg v1.WebhookRequest
@@ -194,7 +194,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler %v", msg)
+			logger.Debugf("mgWebhookHandler sent %v", msg)
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -211,7 +211,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler %v", msg)
+			logger.Debugf("mgWebhookHandler update %v", msg)
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -228,7 +228,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler %v", msg)
+			logger.Debugf("mgWebhookHandler delete %v", msg)
 		}
 
 		w.WriteHeader(http.StatusOK)
