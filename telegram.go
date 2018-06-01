@@ -84,60 +84,64 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 	var client = v1.New(c.MGURL, c.MGToken)
 
 	if update.Message != nil {
-		snd := v1.SendData{
-			Message: v1.SendMessage{
-				Message: v1.Message{
-					ExternalID: strconv.Itoa(update.Message.MessageID),
-					Type:       "text",
-					Text:       update.Message.Text,
+		if update.Message.Text != "" {
+			snd := v1.SendData{
+				Message: v1.SendMessage{
+					Message: v1.Message{
+						ExternalID: strconv.Itoa(update.Message.MessageID),
+						Type:       "text",
+						Text:       update.Message.Text,
+					},
+					SentAt: time.Now(),
 				},
-				SentAt: time.Now(),
-			},
-			User: v1.User{
-				ExternalID: strconv.Itoa(update.Message.From.ID),
-				Nickname:   update.Message.From.UserName,
-				Firstname:  update.Message.From.FirstName,
-				Lastname:   update.Message.From.LastName,
-				Language:   update.Message.From.LanguageCode,
-			},
-			Channel: b.Channel,
-		}
+				User: v1.User{
+					ExternalID: strconv.Itoa(update.Message.From.ID),
+					Nickname:   update.Message.From.UserName,
+					Firstname:  update.Message.From.FirstName,
+					Lastname:   update.Message.From.LastName,
+					Language:   update.Message.From.LanguageCode,
+				},
+				Channel: b.Channel,
+			}
 
-		data, st, err := client.Messages(snd)
-		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			logger.Error(token, err.Error(), st, data)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+			data, st, err := client.Messages(snd)
+			if err != nil {
+				raven.CaptureErrorAndWait(err, nil)
+				logger.Error(token, err.Error(), st, data)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 
-		if config.Debug {
-			logger.Debugf("telegramWebhookHandler Type: SendMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+			if config.Debug {
+				logger.Debugf("telegramWebhookHandler Type: SendMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+			}
 		}
 	}
 
 	if update.EditedMessage != nil {
-		snd := v1.UpdateData{
-			Message: v1.UpdateMessage{
-				Message: v1.Message{
-					ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
-					Type:       "text",
-					Text:       update.EditedMessage.Text,
+		if update.EditedMessage.Text != "" {
+			snd := v1.UpdateData{
+				Message: v1.UpdateMessage{
+					Message: v1.Message{
+						ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
+						Type:       "text",
+						Text:       update.EditedMessage.Text,
+					},
 				},
-			},
-			Channel: b.Channel,
-		}
+				Channel: b.Channel,
+			}
 
-		data, st, err := client.UpdateMessages(snd)
-		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			logger.Error(token, err.Error(), st, data)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+			data, st, err := client.UpdateMessages(snd)
+			if err != nil {
+				raven.CaptureErrorAndWait(err, nil)
+				logger.Error(token, err.Error(), st, data)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 
-		if config.Debug {
-			logger.Debugf("telegramWebhookHandler Type: UpdateMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+			if config.Debug {
+				logger.Debugf("telegramWebhookHandler Type: UpdateMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+			}
 		}
 	}
 
