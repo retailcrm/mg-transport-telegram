@@ -14,6 +14,7 @@ type TransportConfig struct {
 	Database   DatabaseConfig   `yaml:"database"`
 	SentryDSN  string           `yaml:"sentry_dsn"`
 	HTTPServer HTTPServerConfig `yaml:"http_server"`
+	Debug      bool             `yaml:"debug"`
 }
 
 // DatabaseConfig struct

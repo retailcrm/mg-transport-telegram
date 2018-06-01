@@ -8,3 +8,5 @@ http_server:
 sentry_dsn: ~
 
 log_level: 5
+
+debug: false

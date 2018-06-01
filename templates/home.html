@@ -4,7 +4,8 @@
             <div id="msg"></div>
             <div class="row">
                 <div class="input-field col s12">
-                    <input placeholder="API Url" id="api_url" name="api_url" type="text" class="validate">
+                    <input placeholder="CRM Url" id="api_url" name="api_url" type="text" class="validate"
+                        {{if .Conn.APIURL}} value="{{.Conn.APIURL}}" {{end}}>
                 </div>
             </div>
             <div class="row">

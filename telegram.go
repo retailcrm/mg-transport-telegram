@@ -96,7 +96,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 				Lastname:   update.Message.From.LastName,
 				Language:   update.Message.From.LanguageCode,
 			},
-			Channel: c.Bots[0].Channel,
+			Channel: b.Channel,
 		}
 
 		data, st, err := client.Messages(snd)
@@ -105,6 +105,10 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 			logger.Error(token, err.Error(), st, data)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
+		}
+
+		if config.Debug {
+			logger.Debugf("Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
 		}
 	}
 
@@ -117,7 +121,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 					Text:       update.EditedMessage.Text,
 				},
 			},
-			Channel: c.Bots[0].Channel,
+			Channel: b.Channel,
 		}
 
 		data, st, err := client.UpdateMessages(snd)
@@ -126,6 +130,10 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 			logger.Error(token, err.Error(), st, data)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
+		}
+
+		if config.Debug {
+			logger.Debugf("Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
 		}
 	}
 
@@ -177,7 +185,10 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		logger.Debugf("%v", msg)
+		if config.Debug {
+			logger.Debugf("%v", msg)
+		}
+
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Message sent"))
 	}
@@ -191,7 +202,10 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		logger.Debugf("%v", msg)
+		if config.Debug {
+			logger.Debugf("%v", msg)
+		}
+
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Message updated"))
 	}
@@ -205,7 +219,10 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		logger.Debugf("%v", msg)
+		if config.Debug {
+			logger.Debugf("%v", msg)
+		}
+
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Message deleted"))
 	}
