@@ -429,7 +429,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		Integrations: &v5.Integrations{
 			MgTransport: &v5.MgTransport{
 				WebhookUrl: fmt.Sprintf(
-					"https://%s/webhook",
+					"https://%s/webhook/",
 					config.HTTPServer.Host,
 				),
 			},
