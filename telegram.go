@@ -32,11 +32,6 @@ func GetBotName(bot *tgbotapi.BotAPI) string {
 }
 
 func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
-	if config.Debug {
-		var v interface{}
-		json.NewDecoder(r.Body).Decode(&v)
-		logger.Debugf("token: %v mgWebhookHandler: %v", token, v)
-	}
 	b, err := getBotByToken(token)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
@@ -72,6 +67,10 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		w.WriteHeader(http.StatusInternalServerError)
 		logger.Error(token, err)
 		return
+	}
+
+	if config.Debug {
+		logger.Debugf("telegramWebhookHandler: %v", string(bytes))
 	}
 
 	err = json.Unmarshal(bytes, &update)
@@ -113,7 +112,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		}
 
 		if config.Debug {
-			logger.Debugf("Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+			logger.Debugf("telegramWebhookHandler Type: SendMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
 		}
 	}
 
@@ -138,7 +137,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		}
 
 		if config.Debug {
-			logger.Debugf("Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+			logger.Debugf("telegramWebhookHandler Type: UpdateMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
 		}
 	}
 
@@ -146,16 +145,15 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 }
 
 func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
-	if config.Debug {
-		var v interface{}
-		json.NewDecoder(r.Body).Decode(&v)
-		logger.Debugf("mgWebhookHandler: %v", v)
-	}
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		logger.Error(err)
 		return
+	}
+
+	if config.Debug {
+		logger.Debugf("mgWebhookHandler: %v", string(bytes))
 	}
 
 	var msg v1.WebhookRequest
@@ -196,7 +194,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if config.Debug {
-			logger.Debugf("%v", msg)
+			logger.Debugf("mgWebhookHandler %v", msg)
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -213,7 +211,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if config.Debug {
-			logger.Debugf("%v", msg)
+			logger.Debugf("mgWebhookHandler %v", msg)
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -230,7 +228,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if config.Debug {
-			logger.Debugf("%v", msg)
+			logger.Debugf("mgWebhookHandler %v", msg)
 		}
 
 		w.WriteHeader(http.StatusOK)
