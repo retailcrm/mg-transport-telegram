@@ -169,6 +169,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	uid, _ := strconv.Atoi(msg.Data.ExternalMessageID)
+	cid, _ := strconv.ParseInt(msg.Data.ExternalChatID, 10, 64)
 
 	b := getBotByChannel(msg.Data.ChannelID)
 	if b.ID == 0 {
@@ -189,7 +190,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if msg.Type == "message_sent" {
-		msg, err := bot.Send(tgbotapi.NewMessage(msg.Data.ExternalChatID, msg.Data.Content))
+		msg, err := bot.Send(tgbotapi.NewMessage(cid, msg.Data.Content))
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
@@ -206,7 +207,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if msg.Type == "message_updated" {
-		msg, err := bot.Send(tgbotapi.NewEditMessageText(msg.Data.ExternalChatID, uid, msg.Data.Content))
+		msg, err := bot.Send(tgbotapi.NewEditMessageText(cid, uid, msg.Data.Content))
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
@@ -223,7 +224,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if msg.Type == "message_deleted" {
-		msg, err := bot.Send(tgbotapi.NewDeleteMessage(msg.Data.ExternalChatID, uid))
+		msg, err := bot.Send(tgbotapi.NewDeleteMessage(cid, uid))
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
