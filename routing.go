@@ -482,17 +482,6 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jss)
 }
 
-type ActivityCallback struct {
-	ClientId  string   `json:"clientId"`
-	Activity  Activity `json:"activity"`
-	SystemUrl string   `json:"systemUrl,omitempty"`
-}
-
-type Activity struct {
-	Active bool `json:"active"`
-	Freeze bool `json:"freeze"`
-}
-
 func activityHandler(w http.ResponseWriter, r *http.Request) {
 	setLocale(r.Header.Get("Accept-Language"))
 	w.Header().Set("Content-Type", "application/json")
@@ -524,7 +513,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var rec ActivityCallback
+	var rec v5.ActivityCallback
 
 	err = json.Unmarshal(body, &rec)
 	if err != nil {
