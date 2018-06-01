@@ -32,6 +32,11 @@ func GetBotName(bot *tgbotapi.BotAPI) string {
 }
 
 func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
+	if config.Debug {
+		var v interface{}
+		json.NewDecoder(r.Body).Decode(&v)
+		logger.Debugf("token: %v mgWebhookHandler: %v", token, v)
+	}
 	b, err := getBotByToken(token)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
@@ -141,6 +146,11 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 }
 
 func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
+	if config.Debug {
+		var v interface{}
+		json.NewDecoder(r.Body).Decode(&v)
+		logger.Debugf("mgWebhookHandler: %v", v)
+	}
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
