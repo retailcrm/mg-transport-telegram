@@ -92,7 +92,13 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 
 func connectHandler(w http.ResponseWriter, r *http.Request) {
 	setLocale(r.Header.Get("Accept-Language"))
-	p := Connection{}
+
+	account := r.URL.Query()
+	rx := regexp.MustCompile(`/+$`)
+	ra := rx.ReplaceAllString(account.Get("account"), ``)
+	p := Connection{
+		APIURL: ra,
+	}
 
 	res := struct {
 		Conn   *Connection
@@ -153,7 +159,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bot.Debug = false
+	bot.Debug = config.Debug
 
 	wr, err := bot.SetWebhook(tgbotapi.NewWebhook("https://" + config.HTTPServer.Host + "/telegram/" + bot.Token))
 	if err != nil {
@@ -439,7 +445,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if status >= http.StatusBadRequest {
-		http.Error(w, errr.ApiErr, http.StatusBadRequest)
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activity_mg"}), http.StatusBadRequest)
 		logger.Error(c.APIURL, status, errr.ApiErr, data)
 		return
 	}

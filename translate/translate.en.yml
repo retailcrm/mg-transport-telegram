@@ -27,3 +27,4 @@ error_creating_webhook: Error while creating webhook
 error_adding_bot: Error while adding bot
 error_save: An error occurred while saving, contact technical support
 missing_credentials: "Necessary credentials: {{.Credentials}}"
+error_activity_mg: Check the activity with MessageGateway in CRM settings
