@@ -101,7 +101,8 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 					Lastname:   update.Message.From.LastName,
 					Language:   update.Message.From.LanguageCode,
 				},
-				Channel: b.Channel,
+				Channel:        b.Channel,
+				ExternalChatID: strconv.FormatInt(update.Message.Chat.ID, 10),
 			}
 
 			data, st, err := client.Messages(snd)
