@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	logging "github.com/op/go-logging"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/op/go-logging"
+	"gopkg.in/yaml.v2"
 )
 
 // TransportConfig struct
@@ -15,6 +15,17 @@ type TransportConfig struct {
 	SentryDSN  string           `yaml:"sentry_dsn"`
 	HTTPServer HTTPServerConfig `yaml:"http_server"`
 	Debug      bool             `yaml:"debug"`
+	UpdateTime int              `yaml:"update_time"`
+	ConfigAWS  ConfigAWS        `yaml:"config_aws"`
+}
+
+// ConfigAWS struct
+type ConfigAWS struct {
+	AccessKeyID     string `yaml:"access_key_id"`
+	SecretAccessKey string `yaml:"secret_access_key"`
+	Region          string `yaml:"region"`
+	Bucket          string `yaml:"bucket"`
+	ContentType     string `yaml:"content_type"`
 }
 
 // DatabaseConfig struct

@@ -10,3 +10,12 @@ sentry_dsn: ~
 log_level: 5
 
 debug: false
+
+update_time: 24
+
+config_aws:
+    access_key_id: ~
+    secret_access_key: ~
+    region: ~
+    bucket: ~
+    content_type: image/jpeg

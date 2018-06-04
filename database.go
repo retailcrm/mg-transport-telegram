@@ -35,10 +35,18 @@ func NewDb(config *TransportConfig) *Orm {
 	setCreatedAt := func(scope *gorm.Scope) {
 		if scope.HasColumn("CreatedAt") {
 			scope.SetColumn("CreatedAt", time.Now())
+			scope.SetColumn("UpdatedAt", time.Now())
+		}
+	}
+
+	setUpdatedAt := func(scope *gorm.Scope) {
+		if scope.HasColumn("UpdatedAt") {
+			scope.SetColumn("UpdatedAt", time.Now())
 		}
 	}
 
 	db.Callback().Create().Replace("gorm:update_time_stamp", setCreatedAt)
+	db.Callback().Update().Register("update_time_stamp", setUpdatedAt)
 
 	return &Orm{
 		DB: db,

@@ -78,3 +78,14 @@ func getConnectionById(id int) *Connection {
 
 	return &connection
 }
+
+func (u *UserTG) saveUser() error {
+	return orm.DB.Save(u).Error
+}
+
+func getUserByExternalID(eid int) *UserTG {
+	user := UserTG{ExternalID: eid}
+	orm.DB.First(&user)
+
+	return &user
+}
