@@ -211,7 +211,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler update %v", rsp)
+			logger.Debugf("mgWebhookHandler sent response %v", rsp)
 		}
 
 		w.WriteHeader(http.StatusOK)
