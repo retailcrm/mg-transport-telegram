@@ -203,8 +203,19 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			logger.Debugf("mgWebhookHandler sent %v", msg)
 		}
 
+		rsp, err := json.Marshal(map[string]string{"external_message_id": strconv.Itoa(msg.MessageID)})
+		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			logger.Error(err)
+			return
+		}
+
+		if config.Debug {
+			logger.Debugf("mgWebhookHandler update %v", rsp)
+		}
+
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Message sent"))
+		w.Write(rsp)
 	}
 
 	if msg.Type == "message_updated" {
