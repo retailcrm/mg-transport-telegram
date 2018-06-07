@@ -28,8 +28,8 @@ type Bot struct {
 	Active       bool `json:"active,omitempty"`
 }
 
-// UserTG model
-type UserTG struct {
+// Users model
+type Users struct {
 	ID           int    `gorm:"primary_key"`
 	ExternalID   int    `gorm:"external_id;not null;unique"`
 	UserPhotoURL string `gorm:"user_photo type:varchar(255);unique"`

@@ -10,13 +10,13 @@ import (
 
 // TransportConfig struct
 type TransportConfig struct {
-	LogLevel   logging.Level    `yaml:"log_level"`
-	Database   DatabaseConfig   `yaml:"database"`
-	SentryDSN  string           `yaml:"sentry_dsn"`
-	HTTPServer HTTPServerConfig `yaml:"http_server"`
-	Debug      bool             `yaml:"debug"`
-	UpdateTime int              `yaml:"update_time"`
-	ConfigAWS  ConfigAWS        `yaml:"config_aws"`
+	LogLevel       logging.Level    `yaml:"log_level"`
+	Database       DatabaseConfig   `yaml:"database"`
+	SentryDSN      string           `yaml:"sentry_dsn"`
+	HTTPServer     HTTPServerConfig `yaml:"http_server"`
+	Debug          bool             `yaml:"debug"`
+	UpdateInterval int              `yaml:"update_interval"`
+	ConfigAWS      ConfigAWS        `yaml:"config_aws"`
 }
 
 // ConfigAWS struct

@@ -75,7 +75,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 	user := getUserByExternalID(update.Message.From.ID)
 
-	if time.Now().After(user.UpdatedAt.Add(time.Hour*time.Duration(config.UpdateTime))) || user.ID == 0 {
+	if time.Now().After(user.UpdatedAt.Add(time.Hour*time.Duration(config.UpdateInterval))) || user.ID == 0 {
 
 		fileID, fileURL, err := getFileIDAndURL(b.Token, update.Message.From.ID)
 		if err != nil {

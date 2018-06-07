@@ -1,4 +1,4 @@
-create table user_tg
+create table users
 (
   id serial not null
     constraint user_tg_pkey
@@ -10,4 +10,3 @@ create table user_tg
   updated_at  timestamp with time zone,
   constraint user_tg_key unique(external_id, user_photo, user_photo_id)
 );
-

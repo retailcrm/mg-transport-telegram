@@ -11,7 +11,7 @@ log_level: 5
 
 debug: false
 
-update_time: 24
+update_interval: 24
 
 config_aws:
     access_key_id: ~

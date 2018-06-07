@@ -1,1 +1,1 @@
-drop table user_tg;
+drop table users;
