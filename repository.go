@@ -88,8 +88,8 @@ func (u *Users) save() error {
 }
 
 func getUserByExternalID(eid int) *Users {
-	user := Users{ExternalID: eid}
-	orm.DB.First(&user)
+	user := Users{}
+	orm.DB.First(&user, "external_id = ?", eid)
 
 	return &user
 }

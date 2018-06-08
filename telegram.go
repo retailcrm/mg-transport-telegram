@@ -39,15 +39,15 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 	}
 
 	if b.ID == 0 || !b.Active {
-		logger.Error(token, "missing or deactivated")
-		w.WriteHeader(http.StatusBadRequest)
+		logger.Error(token, "telegramWebhookHandler: missing or deactivated")
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
 	c := getConnectionById(b.ConnectionID)
 	if !c.Active {
-		logger.Error(c.ClientID, "connection deativated")
-		w.WriteHeader(http.StatusBadRequest)
+		logger.Error(c.ClientID, "telegramWebhookHandler: connection deactivated")
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -76,7 +76,6 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 	user := getUserByExternalID(update.Message.From.ID)
 
 	if user.Expired(config.UpdateInterval) || user.ID == 0 {
-
 		fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
@@ -109,6 +108,10 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+	}
+
+	if config.Debug {
+		logger.Debugf("telegramWebhookHandler user %v", user)
 	}
 
 	var client = v1.New(c.MGURL, c.MGToken)
@@ -208,7 +211,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 
 	b := getBotByChannel(msg.Data.ChannelID)
 	if b.ID == 0 || !b.Active {
-		logger.Error(msg.Data.ChannelID, "missing or deactivated")
+		logger.Error(msg.Data.ChannelID, "mgWebhookHandler: missing or deactivated")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("missing or deactivated"))
 		return
@@ -216,7 +219,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 
 	c := getConnectionById(b.ConnectionID)
 	if !c.Active {
-		logger.Error(c.ClientID, "connection deativated")
+		logger.Error(c.ClientID, "mgWebhookHandler: connection deactivated")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Connection deactivated"))
 		return
@@ -310,6 +313,10 @@ func GetFileIDAndURL(token string, userID int) (fileID, fileURL string, err erro
 	)
 	if err != nil {
 		return
+	}
+
+	if config.Debug {
+		logger.Debugf("GetFileIDAndURL Photos: %v", res.Photos)
 	}
 
 	if len(res.Photos) > 0 {
