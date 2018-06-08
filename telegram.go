@@ -46,7 +46,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 	c := getConnectionById(b.ConnectionID)
 	if !c.Active {
-		logger.Error(c.ClientID, " connection deativated")
+		logger.Error(c.ClientID, "connection deativated")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -60,6 +60,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer r.Body.Close()
 
 	if config.Debug {
 		logger.Debugf("telegramWebhookHandler: %v", string(bytes))
@@ -77,7 +78,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 	if time.Now().After(user.UpdatedAt.Add(time.Hour*time.Duration(config.UpdateInterval))) || user.ID == 0 {
 
-		fileID, fileURL, err := getFileIDAndURL(b.Token, update.Message.From.ID)
+		fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
@@ -188,6 +189,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer r.Body.Close()
 
 	if config.Debug {
 		logger.Debugf("mgWebhookHandler request: %v", string(bytes))
@@ -206,23 +208,16 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	cid, _ := strconv.ParseInt(msg.Data.ExternalChatID, 10, 64)
 
 	b := getBotByChannel(msg.Data.ChannelID)
-	if b.ID == 0 {
-		logger.Error(msg.Data.ChannelID, "missing")
+	if b.ID == 0 || !b.Active {
+		logger.Error(msg.Data.ChannelID, "missing or deactivated")
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Bot missing"))
-		return
-	}
-
-	if !b.Active {
-		logger.Error(msg.Data.ChannelID, "deactivated")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Bot deactivated"))
+		w.Write([]byte("missing or deactivated"))
 		return
 	}
 
 	c := getConnectionById(b.ConnectionID)
 	if !c.Active {
-		logger.Error(c.ClientID, " connection deativated")
+		logger.Error(c.ClientID, "connection deativated")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Connection deactivated"))
 		return
@@ -299,7 +294,8 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getFileIDAndURL(token string, userID int) (fileID, fileURL string, err error) {
+//GetFileIDAndURL function
+func GetFileIDAndURL(token string, userID int) (fileID, fileURL string, err error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return
@@ -320,15 +316,12 @@ func getFileIDAndURL(token string, userID int) (fileID, fileURL string, err erro
 	if len(res.Photos) > 0 {
 		fileID = res.Photos[0][len(res.Photos[0])-1].FileID
 		fileURL, err = bot.GetFileDirectURL(fileID)
-		if err != nil {
-			return
-		}
-		return
 	}
 
 	return
 }
 
+//UploadUserAvatar function
 func UploadUserAvatar(url string) (picURLs3 string, err error) {
 	s3Config := &aws.Config{
 		Credentials: credentials.NewStaticCredentials(

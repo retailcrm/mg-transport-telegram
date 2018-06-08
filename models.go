@@ -32,7 +32,7 @@ type Bot struct {
 type Users struct {
 	ID           int    `gorm:"primary_key"`
 	ExternalID   int    `gorm:"external_id;not null;unique"`
-	UserPhotoURL string `gorm:"user_photo type:varchar(255);unique"`
+	UserPhotoURL string `gorm:"user_photo_url type:varchar(255);unique"`
 	UserPhotoID  string `gorm:"user_photo_id type:varchar(100);unique"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time

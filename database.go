@@ -25,28 +25,8 @@ func NewDb(config *TransportConfig) *Orm {
 	db.DB().SetMaxOpenConns(config.Database.MaxOpenConnections)
 	db.DB().SetMaxIdleConns(config.Database.MaxIdleConnections)
 
-	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-		return config.Database.TablePrefix + defaultTableName
-	}
-
 	db.SingularTable(true)
 	db.LogMode(config.Database.Logging)
-
-	setCreatedAt := func(scope *gorm.Scope) {
-		if scope.HasColumn("CreatedAt") {
-			scope.SetColumn("CreatedAt", time.Now())
-			scope.SetColumn("UpdatedAt", time.Now())
-		}
-	}
-
-	setUpdatedAt := func(scope *gorm.Scope) {
-		if scope.HasColumn("UpdatedAt") {
-			scope.SetColumn("UpdatedAt", time.Now())
-		}
-	}
-
-	db.Callback().Create().Replace("gorm:update_time_stamp", setCreatedAt)
-	db.Callback().Update().Register("update_time_stamp", setUpdatedAt)
 
 	return &Orm{
 		DB: db,

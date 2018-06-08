@@ -123,6 +123,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err.Error())
 		return
 	}
+	defer r.Body.Close()
 
 	var b Bot
 
@@ -228,6 +229,7 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err.Error())
 		return
 	}
+	defer r.Body.Close()
 
 	var b Bot
 
@@ -329,6 +331,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
 		return
 	}
+	defer r.Body.Close()
 
 	var c Connection
 
@@ -374,6 +377,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err.Error())
 		return
 	}
+	defer r.Body.Close()
 
 	var c Connection
 
@@ -512,6 +516,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonString)
 		return
 	}
+	defer r.Body.Close()
 
 	var rec v5.ActivityCallback
 
