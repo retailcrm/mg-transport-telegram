@@ -25,6 +25,7 @@ type ConfigAWS struct {
 	SecretAccessKey string `yaml:"secret_access_key"`
 	Region          string `yaml:"region"`
 	Bucket          string `yaml:"bucket"`
+	FolderName      string `yaml:"folder_name"`
 	ContentType     string `yaml:"content_type"`
 }
 

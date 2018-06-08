@@ -3,12 +3,11 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
-
-	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -30,6 +29,7 @@ func GetBotName(bot *tgbotapi.BotAPI) string {
 }
 
 func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
+	defer r.Body.Close()
 	b, err := getBotByToken(token)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
@@ -60,7 +60,6 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	defer r.Body.Close()
 
 	if config.Debug {
 		logger.Debugf("telegramWebhookHandler: %v", string(bytes))
@@ -76,7 +75,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 	user := getUserByExternalID(update.Message.From.ID)
 
-	if time.Now().After(user.UpdatedAt.Add(time.Hour*time.Duration(config.UpdateInterval))) || user.ID == 0 {
+	if user.Expired(config.UpdateInterval) || user.ID == 0 {
 
 		fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
 		if err != nil {
@@ -103,7 +102,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 			user.ExternalID = update.Message.From.ID
 		}
 
-		err = user.saveUser()
+		err = user.save()
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
@@ -182,6 +181,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 }
 
 func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
@@ -189,7 +189,6 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	defer r.Body.Close()
 
 	if config.Debug {
 		logger.Debugf("mgWebhookHandler request: %v", string(bytes))
@@ -338,16 +337,15 @@ func UploadUserAvatar(url string) (picURLs3 string, err error) {
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode >= http.StatusBadRequest {
 		return "", errors.New(fmt.Sprintf("get: %v code: %v", url, resp.StatusCode))
 	}
 
-	defer resp.Body.Close()
-
 	result, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket:      aws.String(config.ConfigAWS.Bucket),
-		Key:         aws.String(fmt.Sprintf("%v.jpg", GenerateToken())),
+		Key:         aws.String(fmt.Sprintf("%v/%v.jpg", config.ConfigAWS.FolderName, GenerateToken())),
 		Body:        resp.Body,
 		ContentType: aws.String(config.ConfigAWS.ContentType),
 		ACL:         aws.String("public-read"),

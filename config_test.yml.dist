@@ -18,4 +18,5 @@ config_aws:
     secret_access_key: ~
     region: ~
     bucket: ~
+    folder_name: ~
     content_type: image/jpeg

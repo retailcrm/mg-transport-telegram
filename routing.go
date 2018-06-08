@@ -115,6 +115,7 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addBotHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -123,7 +124,6 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err.Error())
 		return
 	}
-	defer r.Body.Close()
 
 	var b Bot
 
@@ -221,6 +221,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func activityBotHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -229,7 +230,6 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err.Error())
 		return
 	}
-	defer r.Body.Close()
 
 	var b Bot
 
@@ -323,6 +323,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -331,7 +332,6 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
 		return
 	}
-	defer r.Body.Close()
 
 	var c Connection
 
@@ -368,6 +368,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -377,7 +378,6 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err.Error())
 		return
 	}
-	defer r.Body.Close()
 
 	var c Connection
 
@@ -487,6 +487,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func activityHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 	w.Header().Set("Content-Type", "application/json")
 	res := Response{Success: false}
@@ -516,7 +517,6 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonString)
 		return
 	}
-	defer r.Body.Close()
 
 	var rec v5.ActivityCallback
 

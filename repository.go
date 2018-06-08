@@ -1,6 +1,10 @@
 package main
 
-import "github.com/jinzhu/gorm"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 func getConnection(uid string) *Connection {
 	var connection Connection
@@ -79,7 +83,7 @@ func getConnectionById(id int) *Connection {
 	return &connection
 }
 
-func (u *Users) saveUser() error {
+func (u *Users) save() error {
 	return orm.DB.Save(u).Error
 }
 
@@ -88,4 +92,9 @@ func getUserByExternalID(eid int) *Users {
 	orm.DB.First(&user)
 
 	return &user
+}
+
+//Expired method
+func (u *Users) Expired(updateInterval int) bool {
+	return time.Now().After(u.UpdatedAt.Add(time.Hour * time.Duration(updateInterval)))
 }
