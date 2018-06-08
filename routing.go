@@ -115,6 +115,7 @@ func connectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addBotHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -152,7 +153,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bot, err := GetBotInfo(b.Token)
+	bot, err := tgbotapi.NewBotAPI(b.Token)
 	if err != nil {
 		logger.Error(b.Token, err.Error())
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "incorrect_token"}), http.StatusBadRequest)
@@ -220,6 +221,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func activityBotHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -278,8 +280,8 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 	err = b.setBotActivity()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(b.ID, err.Error())
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
+		logger.Error(b.ID, err.Error())
 		return
 	}
 
@@ -321,6 +323,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -365,6 +368,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -483,6 +487,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func activityHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 	w.Header().Set("Content-Type", "application/json")
 	res := Response{Success: false}
@@ -530,7 +535,7 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := getConnection(rec.ClientId)
-	c.Active = rec.Activity.Active
+	c.Active = rec.Activity.Active && !rec.Activity.Freeze
 
 	if err := c.setConnectionActivity(); err != nil {
 		raven.CaptureErrorAndWait(err, nil)

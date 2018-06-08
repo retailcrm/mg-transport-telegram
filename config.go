@@ -4,17 +4,29 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	logging "github.com/op/go-logging"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/op/go-logging"
+	"gopkg.in/yaml.v2"
 )
 
 // TransportConfig struct
 type TransportConfig struct {
-	LogLevel   logging.Level    `yaml:"log_level"`
-	Database   DatabaseConfig   `yaml:"database"`
-	SentryDSN  string           `yaml:"sentry_dsn"`
-	HTTPServer HTTPServerConfig `yaml:"http_server"`
-	Debug      bool             `yaml:"debug"`
+	LogLevel       logging.Level    `yaml:"log_level"`
+	Database       DatabaseConfig   `yaml:"database"`
+	SentryDSN      string           `yaml:"sentry_dsn"`
+	HTTPServer     HTTPServerConfig `yaml:"http_server"`
+	Debug          bool             `yaml:"debug"`
+	UpdateInterval int              `yaml:"update_interval"`
+	ConfigAWS      ConfigAWS        `yaml:"config_aws"`
+}
+
+// ConfigAWS struct
+type ConfigAWS struct {
+	AccessKeyID     string `yaml:"access_key_id"`
+	SecretAccessKey string `yaml:"secret_access_key"`
+	Region          string `yaml:"region"`
+	Bucket          string `yaml:"bucket"`
+	FolderName      string `yaml:"folder_name"`
+	ContentType     string `yaml:"content_type"`
 }
 
 // DatabaseConfig struct
