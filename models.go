@@ -28,14 +28,18 @@ type Bot struct {
 	Active       bool `json:"active,omitempty"`
 }
 
-// Users model
-type Users struct {
+// User model
+type User struct {
 	ID           int    `gorm:"primary_key"`
 	ExternalID   int    `gorm:"external_id;not null;unique"`
 	UserPhotoURL string `gorm:"user_photo_url type:varchar(255)"`
 	UserPhotoID  string `gorm:"user_photo_id type:varchar(100)"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+}
+
+func (User) TableName() string {
+	return "mg_user"
 }
 
 //Bots list

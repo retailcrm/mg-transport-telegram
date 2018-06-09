@@ -73,51 +73,52 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		return
 	}
 
-	user := getUserByExternalID(update.Message.From.ID)
-
-	if user.Expired(config.UpdateInterval) || user.ID == 0 {
-		fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
-		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		if fileID != user.UserPhotoID && fileURL != "" {
-			picURL, err := UploadUserAvatar(fileURL)
-			if err != nil {
-				raven.CaptureErrorAndWait(err, nil)
-				logger.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			user.UserPhotoID = fileID
-			user.UserPhotoURL = picURL
-		}
-
-		if user.ExternalID == 0 {
-			user.ExternalID = update.Message.From.ID
-		}
-
-		err = user.save()
-		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if config.Debug {
-		logger.Debugf("telegramWebhookHandler user %v", user)
-	}
-
 	var client = v1.New(c.MGURL, c.MGToken)
 
 	if update.Message != nil {
 		if update.Message.Text != "" {
+
+			user := getUserByExternalID(update.Message.From.ID)
+
+			if user.Expired(config.UpdateInterval) || user.ID == 0 {
+				fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
+				if err != nil {
+					raven.CaptureErrorAndWait(err, nil)
+					logger.Error(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				if fileID != user.UserPhotoID && fileURL != "" {
+					picURL, err := UploadUserAvatar(fileURL)
+					if err != nil {
+						raven.CaptureErrorAndWait(err, nil)
+						logger.Error(err)
+						w.WriteHeader(http.StatusInternalServerError)
+						return
+					}
+
+					user.UserPhotoID = fileID
+					user.UserPhotoURL = picURL
+				}
+
+				if user.ExternalID == 0 {
+					user.ExternalID = update.Message.From.ID
+				}
+
+				err = user.save()
+				if err != nil {
+					raven.CaptureErrorAndWait(err, nil)
+					logger.Error(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+			}
+
+			if config.Debug {
+				logger.Debugf("telegramWebhookHandler user %v", user)
+			}
+
 			snd := v1.SendData{
 				Message: v1.SendMessage{
 					Message: v1.Message{
@@ -185,6 +186,21 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	clientID := r.Header.Get("Clientid")
+	if clientID == "" {
+		logger.Error("mgWebhookHandler clientID is empty")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	c := getConnection(clientID)
+	if !c.Active {
+		logger.Error(c.ClientID, "mgWebhookHandler: connection deactivated")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Connection deactivated"))
+		return
+	}
+
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
@@ -209,19 +225,11 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	uid, _ := strconv.Atoi(msg.Data.ExternalMessageID)
 	cid, _ := strconv.ParseInt(msg.Data.ExternalChatID, 10, 64)
 
-	b := getBotByChannel(msg.Data.ChannelID)
+	b := getBotByChannelAndCID(c.ID, msg.Data.ChannelID)
 	if b.ID == 0 || !b.Active {
 		logger.Error(msg.Data.ChannelID, "mgWebhookHandler: missing or deactivated")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("missing or deactivated"))
-		return
-	}
-
-	c := getConnectionById(b.ConnectionID)
-	if !c.Active {
-		logger.Error(c.ClientID, "mgWebhookHandler: connection deactivated")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Connection deactivated"))
 		return
 	}
 
@@ -254,7 +262,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler sent response %v", rsp)
+			logger.Debugf("mgWebhookHandler sent response %v", string(rsp))
 		}
 
 		w.WriteHeader(http.StatusOK)

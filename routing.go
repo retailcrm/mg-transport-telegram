@@ -86,7 +86,9 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 			http.NotFound(w, r)
 			return
 		}
-		fn(w, r, m[2])
+		raven.CapturePanic(func() {
+			fn(w, r, m[2])
+		}, nil)
 	}
 }
 
@@ -504,7 +506,10 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
+	r.ParseForm()
+	var rec v5.Activity
+
+	err := json.Unmarshal([]byte(r.FormValue("activity")), &rec)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		res.Error = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "wrong_data"})
@@ -518,24 +523,8 @@ func activityHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var rec v5.ActivityCallback
-
-	err = json.Unmarshal(body, &rec)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		res.Error = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "wrong_data"})
-		jsonString, err := json.Marshal(res)
-		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			logger.Error(err)
-			return
-		}
-		w.Write(jsonString)
-		return
-	}
-
-	c := getConnection(rec.ClientId)
-	c.Active = rec.Activity.Active && !rec.Activity.Freeze
+	c := getConnection(r.FormValue("clientId"))
+	c.Active = rec.Active && !rec.Freeze
 
 	if err := c.setConnectionActivity(); err != nil {
 		raven.CaptureErrorAndWait(err, nil)

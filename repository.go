@@ -48,13 +48,6 @@ func getBotByToken(token string) (*Bot, error) {
 	return &bot, nil
 }
 
-func getBotByChannel(ch uint64) *Bot {
-	var bot Bot
-	orm.DB.First(&bot, "channel = ?", ch)
-
-	return &bot
-}
-
 func (b *Bot) setBotActivity() error {
 	return orm.DB.Model(b).Where("token = ?", b.Token).Update("Active", !b.Active).Error
 }
@@ -76,6 +69,13 @@ func (c Connection) getBotsByClientID() Bots {
 	return b
 }
 
+func getBotByChannelAndCID(connectionID int, ch uint64) *Bot {
+	var bot Bot
+	orm.DB.First(&bot, "connection_id = ? AND channel = ?", connectionID, ch)
+
+	return &bot
+}
+
 func getConnectionById(id int) *Connection {
 	var connection Connection
 	orm.DB.First(&connection, "id = ?", id)
@@ -83,18 +83,18 @@ func getConnectionById(id int) *Connection {
 	return &connection
 }
 
-func (u *Users) save() error {
+func (u *User) save() error {
 	return orm.DB.Save(u).Error
 }
 
-func getUserByExternalID(eid int) *Users {
-	user := Users{}
+func getUserByExternalID(eid int) *User {
+	var user User
 	orm.DB.First(&user, "external_id = ?", eid)
 
 	return &user
 }
 
 //Expired method
-func (u *Users) Expired(updateInterval int) bool {
+func (u *User) Expired(updateInterval int) bool {
 	return time.Now().After(u.UpdatedAt.Add(time.Hour * time.Duration(updateInterval)))
 }
