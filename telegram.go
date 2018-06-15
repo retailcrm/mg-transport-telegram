@@ -77,8 +77,12 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 	if update.Message != nil {
 		if update.Message.Text != "" {
-
+			nickname := update.Message.From.UserName
 			user := getUserByExternalID(update.Message.From.ID)
+
+			if update.Message.From.UserName == "" {
+				nickname = update.Message.From.FirstName
+			}
 
 			if user.Expired(config.UpdateInterval) || user.ID == 0 {
 				fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
@@ -130,7 +134,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 				},
 				User: v1.User{
 					ExternalID: strconv.Itoa(update.Message.From.ID),
-					Nickname:   update.Message.From.UserName,
+					Nickname:   nickname,
 					Firstname:  update.Message.From.FirstName,
 					Avatar:     user.UserPhotoURL,
 					Lastname:   update.Message.From.LastName,
