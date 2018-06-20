@@ -1,1 +1,1 @@
-alter table mg_user rename to user;
+alter table mg_user rename to users;

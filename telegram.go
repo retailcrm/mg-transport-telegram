@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/getsentry/raven-go"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/retailcrm/mg-transport-api-client-go/v1"
 )
 
@@ -76,112 +77,118 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 	var client = v1.New(c.MGURL, c.MGToken)
 
 	if update.Message != nil {
-		if update.Message.Text != "" {
-			nickname := update.Message.From.UserName
-			user := getUserByExternalID(update.Message.From.ID)
+		if update.Message.Text == "" {
+			setLocale(update.Message.From.LanguageCode)
+			update.Message.Text = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: getMessageID(update.Message)})
+		}
 
-			if update.Message.From.UserName == "" {
-				nickname = update.Message.From.FirstName
-			}
+		nickname := update.Message.From.UserName
+		user := getUserByExternalID(update.Message.From.ID)
 
-			if user.Expired(config.UpdateInterval) || user.ID == 0 {
-				fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
-				if err != nil {
-					raven.CaptureErrorAndWait(err, nil)
-					logger.Error(err)
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
+		if update.Message.From.UserName == "" {
+			nickname = update.Message.From.FirstName
+		}
 
-				if fileID != user.UserPhotoID && fileURL != "" {
-					picURL, err := UploadUserAvatar(fileURL)
-					if err != nil {
-						raven.CaptureErrorAndWait(err, nil)
-						logger.Error(err)
-						w.WriteHeader(http.StatusInternalServerError)
-						return
-					}
-
-					user.UserPhotoID = fileID
-					user.UserPhotoURL = picURL
-				}
-
-				if user.ExternalID == 0 {
-					user.ExternalID = update.Message.From.ID
-				}
-
-				err = user.save()
-				if err != nil {
-					raven.CaptureErrorAndWait(err, nil)
-					logger.Error(err)
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
-			}
-
-			if config.Debug {
-				logger.Debugf("telegramWebhookHandler user %v", user)
-			}
-
-			snd := v1.SendData{
-				Message: v1.SendMessage{
-					Message: v1.Message{
-						ExternalID: strconv.Itoa(update.Message.MessageID),
-						Type:       "text",
-						Text:       update.Message.Text,
-					},
-					SentAt: time.Now(),
-				},
-				User: v1.User{
-					ExternalID: strconv.Itoa(update.Message.From.ID),
-					Nickname:   nickname,
-					Firstname:  update.Message.From.FirstName,
-					Avatar:     user.UserPhotoURL,
-					Lastname:   update.Message.From.LastName,
-					Language:   update.Message.From.LanguageCode,
-				},
-				Channel:        b.Channel,
-				ExternalChatID: strconv.FormatInt(update.Message.Chat.ID, 10),
-			}
-
-			data, st, err := client.Messages(snd)
+		if user.Expired(config.UpdateInterval) || user.ID == 0 {
+			fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
 			if err != nil {
 				raven.CaptureErrorAndWait(err, nil)
-				logger.Error(token, err.Error(), st, data)
+				logger.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
-			if config.Debug {
-				logger.Debugf("telegramWebhookHandler Type: SendMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+			if fileID != user.UserPhotoID && fileURL != "" {
+				picURL, err := UploadUserAvatar(fileURL)
+				if err != nil {
+					raven.CaptureErrorAndWait(err, nil)
+					logger.Error(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				user.UserPhotoID = fileID
+				user.UserPhotoURL = picURL
 			}
+
+			if user.ExternalID == 0 {
+				user.ExternalID = update.Message.From.ID
+			}
+
+			err = user.save()
+			if err != nil {
+				raven.CaptureErrorAndWait(err, nil)
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		if config.Debug {
+			logger.Debugf("telegramWebhookHandler user %v", user)
+		}
+
+		snd := v1.SendData{
+			Message: v1.SendMessage{
+				Message: v1.Message{
+					ExternalID: strconv.Itoa(update.Message.MessageID),
+					Type:       "text",
+					Text:       update.Message.Text,
+				},
+				SentAt: time.Now(),
+			},
+			User: v1.User{
+				ExternalID: strconv.Itoa(update.Message.From.ID),
+				Nickname:   nickname,
+				Firstname:  update.Message.From.FirstName,
+				Avatar:     user.UserPhotoURL,
+				Lastname:   update.Message.From.LastName,
+				Language:   update.Message.From.LanguageCode,
+			},
+			Channel:        b.Channel,
+			ExternalChatID: strconv.FormatInt(update.Message.Chat.ID, 10),
+		}
+
+		data, st, err := client.Messages(snd)
+		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			logger.Error(token, err.Error(), st, data)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if config.Debug {
+			logger.Debugf("telegramWebhookHandler Type: SendMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
 		}
 	}
 
 	if update.EditedMessage != nil {
-		if update.EditedMessage.Text != "" {
-			snd := v1.UpdateData{
-				Message: v1.UpdateMessage{
-					Message: v1.Message{
-						ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
-						Type:       "text",
-						Text:       update.EditedMessage.Text,
-					},
+		if update.EditedMessage.Text == "" {
+			setLocale(update.EditedMessage.From.LanguageCode)
+			update.EditedMessage.Text = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: getMessageID(update.Message)})
+		}
+
+		snd := v1.UpdateData{
+			Message: v1.UpdateMessage{
+				Message: v1.Message{
+					ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
+					Type:       "text",
+					Text:       update.EditedMessage.Text,
 				},
-				Channel: b.Channel,
-			}
+			},
+			Channel: b.Channel,
+		}
 
-			data, st, err := client.UpdateMessages(snd)
-			if err != nil {
-				raven.CaptureErrorAndWait(err, nil)
-				logger.Error(token, err.Error(), st, data)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+		data, st, err := client.UpdateMessages(snd)
+		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			logger.Error(token, err.Error(), st, data)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-			if config.Debug {
-				logger.Debugf("telegramWebhookHandler Type: UpdateMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
-			}
+		if config.Debug {
+			logger.Debugf("telegramWebhookHandler Type: UpdateMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
 		}
 	}
 
@@ -229,7 +236,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	uid, _ := strconv.Atoi(msg.Data.ExternalMessageID)
 	cid, _ := strconv.ParseInt(msg.Data.ExternalChatID, 10, 64)
 
-	b := getBotByChannelAndCID(c.ID, msg.Data.ChannelID)
+	b := getBot(c.ID, msg.Data.ChannelID)
 	if b.ID == 0 || !b.Active {
 		logger.Error(msg.Data.ChannelID, "mgWebhookHandler: missing or deactivated")
 		w.WriteHeader(http.StatusBadRequest)
@@ -376,4 +383,27 @@ func UploadUserAvatar(url string) (picURLs3 string, err error) {
 	picURLs3 = result.Location
 
 	return
+}
+
+func getMessageID(data *tgbotapi.Message) string {
+	switch {
+	case data.Sticker != nil:
+		return "sticker"
+	case data.Audio != nil:
+		return "audio"
+	case data.Contact != nil:
+		return "contact"
+	case data.Document != nil:
+		return "document"
+	case data.Location != nil:
+		return "location"
+	case data.Video != nil:
+		return "video"
+	case data.Voice != nil:
+		return "voice"
+	case data.Photo != nil:
+		return "photo"
+	default:
+		return "undefined"
+	}
 }

@@ -69,9 +69,9 @@ func (c Connection) getBotsByClientID() Bots {
 	return b
 }
 
-func getBotByChannelAndCID(connectionID int, ch uint64) *Bot {
+func getBot(cid int, ch uint64) *Bot {
 	var bot Bot
-	orm.DB.First(&bot, "connection_id = ? AND channel = ?", connectionID, ch)
+	orm.DB.First(&bot, "connection_id = ? AND channel = ?", cid, ch)
 
 	return &bot
 }
