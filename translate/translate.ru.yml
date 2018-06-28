@@ -3,7 +3,7 @@ tab_settings: Настройки CRM
 tab_bots: Боты
 table_name: Имя
 table_token: Токен
-table_activity: Активность
+table_delete: Удалить
 api_key: API Ключ
 add_bot: Добавить бота
 title: Модуль подключения Telegram к retailCRM

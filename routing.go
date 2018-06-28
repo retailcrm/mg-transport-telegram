@@ -61,7 +61,7 @@ func setWrapperRoutes() {
 	http.HandleFunc("/create/", createHandler)
 	http.HandleFunc("/actions/activity", activityHandler)
 	http.HandleFunc("/add-bot/", addBotHandler)
-	http.HandleFunc("/activity-bot/", activityBotHandler)
+	http.HandleFunc("/delete-bot/", deleteBotHandler)
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, c interface{}) {
@@ -200,7 +200,6 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b.Channel = data.ChannelID
-	b.Active = true
 
 	err = c.createBot(b)
 	if err != nil {
@@ -222,7 +221,7 @@ func addBotHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonString)
 }
 
-func activityBotHandler(w http.ResponseWriter, r *http.Request) {
+func deleteBotHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	setLocale(r.Header.Get("Accept-Language"))
 	body, err := ioutil.ReadAll(r.Body)
@@ -250,36 +249,16 @@ func activityBotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ch := v1.Channel{
-		ID:   getBotChannelByToken(b.Token),
-		Type: "telegram",
-		Events: []string{
-			"message_sent",
-			"message_updated",
-			"message_deleted",
-			"message_read",
-		},
-	}
-
 	var client = v1.New(c.MGURL, c.MGToken)
 
-	if b.Active {
-		data, status, err := client.DeactivateTransportChannel(ch.ID)
-		if status > http.StatusOK {
-			http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_deactivating_channel"}), http.StatusBadRequest)
-			logger.Error(b.ID, status, err.Error(), data)
-			return
-		}
-	} else {
-		data, status, err := client.ActivateTransportChannel(ch)
-		if status > http.StatusCreated {
-			http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_activating_channel"}), http.StatusBadRequest)
-			logger.Error(b.ID, status, err.Error(), data)
-			return
-		}
+	data, status, err := client.DeactivateTransportChannel(getBotChannelByToken(b.Token))
+	if status > http.StatusOK {
+		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_deactivating_channel"}), http.StatusBadRequest)
+		logger.Error(b.ID, status, err.Error(), data)
+		return
 	}
 
-	err = b.setBotActivity()
+	err = b.deleteBot()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		http.Error(w, localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "error_save"}), http.StatusInternalServerError)
@@ -309,15 +288,15 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, uid string) {
 		p,
 		bots,
 		map[string]interface{}{
-			"ButtonSave":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "button_save"}),
-			"ApiKey":        localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "api_key"}),
-			"TabSettings":   localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_settings"}),
-			"TabBots":       localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_bots"}),
-			"TableName":     localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_name"}),
-			"TableToken":    localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_token"}),
-			"AddBot":        localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "add_bot"}),
-			"TableActivity": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_activity"}),
-			"Title":         localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "title"}),
+			"ButtonSave":  localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "button_save"}),
+			"ApiKey":      localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "api_key"}),
+			"TabSettings": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_settings"}),
+			"TabBots":     localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "tab_bots"}),
+			"TableName":   localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_name"}),
+			"TableToken":  localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_token"}),
+			"AddBot":      localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "add_bot"}),
+			"TableDelete": localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "table_delete"}),
+			"Title":       localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "title"}),
 		},
 	}
 

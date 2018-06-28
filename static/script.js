@@ -39,21 +39,17 @@ $("#add-bot").on("submit", function(e) {
     )
 });
 
-$(document).on("click", ".activity-bot", function(e) {
+$(document).on("click", ".delete-bot", function(e) {
     let but = $(this);
-    send("/activity-bot/",
+    send("/delete-bot/",
         {
             token: but.attr("data-token"),
-            active: (but.attr("data-activity") === 'true'),
             connectionId: parseInt($('input[name=connectionId]').val()),
         },
         function () {
-            if (but.attr("data-activity") === 'true') {
-                but.find('i').replaceWith('<i class="material-icons">play_arrow</i>');
-                but.attr("data-activity", "false")
-            } else {
-                but.find('i').replaceWith('<i class="material-icons">pause</i>');
-                but.attr("data-activity", "true")
+            but.parents("tr").remove();
+            if ($("#bots tbody tr").length === 0) {
+                $("#bots").addClass("hide");
             }
         }
     )
@@ -89,9 +85,9 @@ function getBotTemplate(data) {
             <td>${bot.name}</td>
             <td>${bot.token}</td>
             <td>
-                <button class="activity-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
-                        data-activity="true" data-token="${bot.token}">
-                    <i class="material-icons">pause</i>
+                <button class="delete-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
+                        data-token="${bot.token}">
+                    <i class="material-icons">delete</i>
                 </button>
             </td>
         </tr>`;

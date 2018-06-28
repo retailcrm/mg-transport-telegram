@@ -39,7 +39,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		return
 	}
 
-	if b.ID == 0 || !b.Active {
+	if b.ID == 0 {
 		logger.Error(token, "telegramWebhookHandler: missing or deactivated")
 		w.WriteHeader(http.StatusOK)
 		return
@@ -237,7 +237,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	cid, _ := strconv.ParseInt(msg.Data.ExternalChatID, 10, 64)
 
 	b := getBot(c.ID, msg.Data.ChannelID)
-	if b.ID == 0 || !b.Active {
+	if b.ID == 0 {
 		logger.Error(msg.Data.ChannelID, "mgWebhookHandler: missing or deactivated")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("missing or deactivated"))
