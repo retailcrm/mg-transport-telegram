@@ -53,7 +53,7 @@
                         <tr>
                             <th>{{.Locale.TableName}}</th>
                             <th>{{.Locale.TableToken}}</th>
-                            <th class="text-left">{{.Locale.TableActivity}}</th>
+                            <th class="text-left">{{.Locale.TableDelete}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -62,9 +62,9 @@
                                     <td>{{.Name}}</td>
                                     <td>{{.Token}}</td>
                                     <td>
-                                        <button class="activity-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
-                                                data-activity="{{.Active}}" data-token="{{.Token}}">
-                                            <i class="material-icons">{{if .Active}}pause{{else}}play_arrow{{end}}</i>
+                                        <button class="delete-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
+                                                data-token="{{.Token}}">
+                                            <i class="material-icons">delete</i>
                                         </button>
                                     </td>
                                 </tr>

@@ -103,7 +103,7 @@ func TestRouting_addBotHandler(t *testing.T) {
 	assert.Equal(t, "123123:Qwerty", res["token"])
 }
 
-func TestRouting_activityBotHandler(t *testing.T) {
+func TestRouting_deleteBotHandler(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://test.retailcrm.pro").
@@ -114,13 +114,13 @@ func TestRouting_activityBotHandler(t *testing.T) {
 		Reply(200).
 		BodyString(`{"id": 1}`)
 
-	req, err := http.NewRequest("POST", "/activity-bot/", strings.NewReader(`{"token": "123123:Qwerty", "active": false, "connectionId": 1}`))
+	req, err := http.NewRequest("POST", "/delete-bot/", strings.NewReader(`{"token": "123123:Qwerty", "active": false, "connectionId": 1}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(activityBotHandler)
+	handler := http.HandlerFunc(deleteBotHandler)
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code,

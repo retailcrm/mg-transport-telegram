@@ -25,7 +25,6 @@ type Bot struct {
 	Name         string `gorm:"name type:varchar(40)" json:"name,omitempty"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
-	Active       bool `json:"active,omitempty"`
 }
 
 // User model

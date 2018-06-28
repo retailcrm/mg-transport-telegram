@@ -1,30 +1,40 @@
 button_save: Save
-tab_settings: Connection settings
+tab_settings: CRM settings
 tab_bots: Bots
-table_name: Bot name
-table_token: Bot token
-table_activity: Activity
-api_key: API Key
-add_bot: Add bot
-title: Telegram transport for retailCRM
-successful: Data successfully updated
+table_name: Name
+table_token: Token
+table_delete: Delete
+api_key: API key
+add_bot: Add a bot
+title: Module of connecting Telegram to retailCRM
+successful: Data was updated successfully
 
-no_bot_token: Enter the bot token
-wrong_data: Incorrect data
+no_bot_token: Enter a token
+wrong_data: Wrong data
 set_method: Set POST method
-bot_already_created: Bot already created
-not_found_account: The account could not be found, contact technical support
-error_activating_channel: Error while activating the channel
-error_deactivating_channel: Error while deactivating the channel
-incorrect_url_key: Enter the correct CRM url or apiKey
-error_creating_integration: Error while creating integration
-error_creating_connection: Error while creating connection
-connection_already_created: Connection already created
-missing_url_key: Missing crm url or apiKey
-incorrect_url: Enter the correct CRM url
-incorrect_token: Set correct bot token
-error_creating_webhook: Error while creating webhook
-error_adding_bot: Error while adding bot
-error_save: An error occurred while saving, contact technical support
-missing_credentials: "Necessary credentials: {{.Credentials}}"
-error_activity_mg: Check the activity with MessageGateway in CRM settings
+bot_already_created: Bot is already created
+not_found_account: Account is not found, contact technical support
+error_activating_channel: Error when activating a channel
+error_deactivating_channel: Error when deactivating a channel
+incorrect_url_key: Enter the correct URL or API key
+error_creating_integration: Error when integrating
+error_creating_connection: Error when establishing a connection
+connection_already_created: Connection is already established
+missing_url_key: URL and API key are missing
+incorrect_url: Enter the correct URL of CRM
+incorrect_token: Create the correct token
+error_creating_webhook: Error when creating a webhook
+error_adding_bot: Error when adding a bot
+error_save: Error while saving, contact technical support
+missing_credentials: "Required methods: {{.Credentials}}"
+error_activity_mg: Check if the integration with MessageGateway is enabled in CRM settings
+
+sticker: "[sticker]"
+audio: "[audio file]"
+contact: "[contact]"
+document: "[document]"
+location: "[location]"
+video: "[video]"
+voice: "[voice message]"
+photo: "[photo]"
+undefined: "[undefined format of a message]"

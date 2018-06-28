@@ -48,8 +48,8 @@ func getBotByToken(token string) (*Bot, error) {
 	return &bot, nil
 }
 
-func (b *Bot) setBotActivity() error {
-	return orm.DB.Model(b).Where("token = ?", b.Token).Update("Active", !b.Active).Error
+func (b *Bot) deleteBot() error {
+	return orm.DB.Delete(b, "token = ?", b.Token).Error
 }
 
 func getBotChannelByToken(token string) uint64 {
@@ -69,9 +69,9 @@ func (c Connection) getBotsByClientID() Bots {
 	return b
 }
 
-func getBotByChannelAndCID(connectionID int, ch uint64) *Bot {
+func getBot(cid int, ch uint64) *Bot {
 	var bot Bot
-	orm.DB.First(&bot, "connection_id = ? AND channel = ?", connectionID, ch)
+	orm.DB.First(&bot, "connection_id = ? AND channel = ?", cid, ch)
 
 	return &bot
 }

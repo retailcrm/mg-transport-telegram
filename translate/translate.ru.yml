@@ -3,7 +3,7 @@ tab_settings: Настройки CRM
 tab_bots: Боты
 table_name: Имя
 table_token: Токен
-table_activity: Активность
+table_delete: Удалить
 api_key: API Ключ
 add_bot: Добавить бота
 title: Модуль подключения Telegram к retailCRM
@@ -28,3 +28,13 @@ error_adding_bot: Ошибка при добавлении бота
 error_save: Ошибка при сохранении, обратитесь в службу технической поддержки
 missing_credentials: "Необходимые методы: {{.Credentials}}"
 error_activity_mg: Проверьте активность интеграции с MessageGateway в настройках CRM
+
+sticker: "[стикер]"
+audio: "[аудио файл]"
+contact: "[контакт]"
+document: "[документ]"
+location: "[местонахождение]"
+video: "[видео]"
+voice: "[голосовое сообщение]"
+photo: "[изображение]"
+undefined: "[неопределенный формат сообщения]"
