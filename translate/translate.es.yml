@@ -1,0 +1,40 @@
+button_save: Guardar
+tab_settings: Ajustes retailCRM
+tab_bots: Bots
+table_name: Nombre
+table_token: Token
+table_activity: Marca de Actividad
+api_key: API key
+add_bot: Añadir un bot
+title: Múdulo de conexión de Telegram a retailCRM
+successful: Datos actualizados con éxito
+
+no_bot_token: Introduzca un token
+wrong_data: Datos erróneos
+set_method: Establezca el método POST
+bot_already_created: El Bot ya está creado
+not_found_account: Cuenta no encontrada, contacte con soporte técnico
+error_activating_channel: Error al activar un canal
+error_deactivating_channel: Error al desactivar un canal
+incorrect_url_key: Introduzca la URL o API key correcta
+error_creating_integration: Error al integrar
+error_creating_connection: Error al establecer la conexión
+connection_already_created: La conexión ya está establecida
+missing_url_key: Faltan la URL y la API key
+incorrect_url: Introduzca URL correcta de retailCRM
+incorrect_token: Crear el token correcto
+error_creating_webhook: Error al crear el webhook
+error_adding_bot: Error al añadir el bot
+error_save: Error al guardar, contacte con el soporte técnico
+missing_credentials: "Métodos requeridos: {{.Credenciales}}"
+error_activity_mg: Revisar si la integración con MessageGateway está habilitada en Ajustes de retailCRM
+
+sticker: "[etiqueta]"
+audio: "[archivo de audio]"
+contact: "[contacto]"
+document: "[documento]"
+location: "[localidad]"
+video:"[video]"
+voice: "[mensaje de voz]"
+photo: "[foto]"
+other: "[formato indefinido de mensaje]"

@@ -1,5 +1,5 @@
 button_save: Save
-tab_settings: CRM settings
+tab_settings: retailCRM settings
 tab_bots: Bots
 table_name: Name
 table_token: Token
@@ -21,13 +21,13 @@ error_creating_integration: Error when integrating
 error_creating_connection: Error when establishing a connection
 connection_already_created: Connection is already established
 missing_url_key: URL and API key are missing
-incorrect_url: Enter the correct URL of CRM
+incorrect_url: Enter the correct URL of retailCRM
 incorrect_token: Create the correct token
 error_creating_webhook: Error when creating a webhook
 error_adding_bot: Error when adding a bot
 error_save: Error while saving, contact technical support
 missing_credentials: "Required methods: {{.Credentials}}"
-error_activity_mg: Check if the integration with MessageGateway is enabled in CRM settings
+error_activity_mg: Check if the integration with MessageGateway is enabled in retailCRM settings
 
 sticker: "[sticker]"
 audio: "[audio file]"
