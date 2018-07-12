@@ -124,6 +124,12 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 			}
 		}
 
+		lang := update.Message.From.LanguageCode
+
+		if len(update.Message.From.LanguageCode) > 2 {
+			lang = update.Message.From.LanguageCode[:2]
+		}
+
 		if config.Debug {
 			logger.Debugf("telegramWebhookHandler user %v", user)
 		}
@@ -143,7 +149,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 				Firstname:  update.Message.From.FirstName,
 				Avatar:     user.UserPhotoURL,
 				Lastname:   update.Message.From.LastName,
-				Language:   update.Message.From.LanguageCode,
+				Language:   lang,
 			},
 			Channel:        b.Channel,
 			ExternalChatID: strconv.FormatInt(update.Message.Chat.ID, 10),
