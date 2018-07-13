@@ -155,7 +155,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 			ExternalChatID: strconv.FormatInt(update.Message.Chat.ID, 10),
 		}
 
-		if update.Message.ReplyToMessage.MessageID != 0 {
+		if update.Message.ReplyToMessage != nil {
 			snd.Quote = &v1.SendMessageRequestQuote{ExternalID: strconv.Itoa(update.Message.ReplyToMessage.MessageID)}
 		}
 
