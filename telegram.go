@@ -155,6 +155,10 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 			ExternalChatID: strconv.FormatInt(update.Message.Chat.ID, 10),
 		}
 
+		if update.Message.ReplyToMessage.MessageID != 0 {
+			snd.Quote = &v1.SendMessageRequestQuote{ExternalID: strconv.Itoa(update.Message.ReplyToMessage.MessageID)}
+		}
+
 		data, st, err := client.Messages(snd)
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
@@ -259,7 +263,20 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if msg.Type == "message_sent" {
-		msg, err := bot.Send(tgbotapi.NewMessage(cid, msg.Data.Content))
+		m := tgbotapi.NewMessage(cid, msg.Data.Content)
+
+		if msg.Data.QuoteExternalID != "" {
+			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
+			if err != nil {
+				raven.CaptureErrorAndWait(err, nil)
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			m.ReplyToMessageID = qid
+		}
+
+		msg, err := bot.Send(m)
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
