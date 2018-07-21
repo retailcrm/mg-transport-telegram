@@ -71,7 +71,7 @@ func TestRouting_addBotHandler(t *testing.T) {
 		BodyString(`{"ok":true,"result":{"url":"https://` + config.HTTPServer.Host + `/telegram/123123:Qwerty","has_custom_certificate":false,"pending_update_count":0}}`)
 
 	gock.New("https://test.retailcrm.pro").
-		Post("/api/v1/transport/channels").
+		Post("/api/transport/v1/channels").
 		BodyString(`{"ID":0,"Type":"telegram","Events":["message_sent","message_updated","message_deleted","message_read"]}`).
 		MatchHeader("Content-Type", "application/json").
 		MatchHeader("X-Transport-Token", "test-token").
@@ -107,7 +107,7 @@ func TestRouting_deleteBotHandler(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("https://test.retailcrm.pro").
-		Post("/api/v1/transport/channels").
+		Post("/api/transport/v1/channels").
 		BodyString(`{"ID":1,"Type":"telegram","Events":["message_sent","message_updated","message_deleted","message_read"]}`).
 		MatchHeader("Content-Type", "application/json").
 		MatchHeader("X-Transport-Token", "123123").
