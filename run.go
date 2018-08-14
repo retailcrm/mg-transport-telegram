@@ -1,15 +1,20 @@
 package main
 
 import (
-	"net/http"
-
 	"os"
 	"os/signal"
 	"syscall"
 
+	"io/ioutil"
+
 	"github.com/getsentry/raven-go"
+	"github.com/gin-contrib/multitemplate"
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	_ "github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/source/file"
+	"gopkg.in/go-playground/validator.v9"
+	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -28,7 +33,6 @@ func (x *RunCommand) Execute(args []string) error {
 	config = LoadConfig(options.Config)
 	orm = NewDb(config)
 	logger = newLogger()
-	raven.SetDSN(config.SentryDSN)
 
 	go start()
 
@@ -47,8 +51,78 @@ func (x *RunCommand) Execute(args []string) error {
 }
 
 func start() {
-	setWrapperRoutes()
-	setTransportRoutes()
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	http.ListenAndServe(config.HTTPServer.Listen, nil)
+	routing := setup()
+	routing.Run(config.HTTPServer.Listen)
+}
+
+func setup() *gin.Engine {
+	loadTranslateFile()
+
+	binding.Validator = new(defaultValidator)
+
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("validatecrmurl", validateCrmURL)
+	}
+
+	if config.Debug == false {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	r := gin.Default()
+
+	if config.Debug {
+		r.Use(gin.Logger())
+	}
+
+	r.Static("/static", "./static")
+	r.HTMLRender = createHTMLRender()
+
+	r.Use(func(c *gin.Context) {
+		setLocale(c.GetHeader("Accept-Language"))
+	})
+
+	errorHandlers := []ErrorHandlerFunc{
+		PanicLogger(),
+		ErrorLogger(),
+		ErrorResponseHandler(),
+	}
+	sentry, _ := raven.New(config.SentryDSN)
+
+	if sentry != nil {
+		errorHandlers = append(errorHandlers, ErrorCaptureHandler(sentry, false))
+	}
+
+	r.Use(ErrorHandler(errorHandlers...))
+
+	r.GET("/", connectHandler)
+	r.GET("/settings/:uid", settingsHandler)
+	r.POST("/save/", saveHandler)
+	r.POST("/create/", createHandler)
+	r.POST("/add-bot/", addBotHandler)
+	r.POST("/delete-bot/", deleteBotHandler)
+	r.POST("/actions/activity", activityHandler)
+	r.POST("/telegram/:token", telegramWebhookHandler)
+	r.POST("/webhook/", mgWebhookHandler)
+
+	return r
+}
+
+func createHTMLRender() multitemplate.Renderer {
+	r := multitemplate.NewRenderer()
+	r.AddFromFiles("home", "templates/layout.html", "templates/home.html")
+	r.AddFromFiles("form", "templates/layout.html", "templates/form.html")
+	return r
+}
+
+func loadTranslateFile() {
+	bundle.RegisterUnmarshalFunc("yml", yaml.Unmarshal)
+	files, err := ioutil.ReadDir("translate")
+	if err != nil {
+		logger.Error(err)
+	}
+	for _, f := range files {
+		if !f.IsDir() {
+			bundle.MustLoadMessageFile("translate/" + f.Name())
+		}
+	}
 }

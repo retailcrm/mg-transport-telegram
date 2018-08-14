@@ -17,6 +17,7 @@ type TransportConfig struct {
 	Debug          bool             `yaml:"debug"`
 	UpdateInterval int              `yaml:"update_interval"`
 	ConfigAWS      ConfigAWS        `yaml:"config_aws"`
+	Credentials    []string         `yaml:"credentials"`
 }
 
 // ConfigAWS struct

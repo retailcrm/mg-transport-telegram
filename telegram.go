@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,73 +11,46 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/getsentry/raven-go"
+	"github.com/gin-gonic/gin"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/retailcrm/mg-transport-api-client-go/v1"
 )
 
-func setTransportRoutes() {
-	http.HandleFunc("/telegram/", makeHandler(telegramWebhookHandler))
-	http.HandleFunc("/webhook/", mgWebhookHandler)
-}
-
-// GetBotName function
-func GetBotName(bot *tgbotapi.BotAPI) string {
-	return bot.Self.FirstName
-}
-
-func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string) {
-	defer r.Body.Close()
+func telegramWebhookHandler(c *gin.Context) {
+	token := c.Param("token")
 	b, err := getBotByToken(token)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(token, err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		c.Error(err)
 		return
 	}
 
 	if b.ID == 0 {
-		logger.Error(token, "telegramWebhookHandler: missing or deactivated")
-		w.WriteHeader(http.StatusOK)
+		c.AbortWithStatus(http.StatusOK)
 		return
 	}
 
-	c := getConnectionById(b.ConnectionID)
-	if !c.Active {
-		logger.Error(c.ClientID, "telegramWebhookHandler: connection deactivated")
-		w.WriteHeader(http.StatusOK)
+	conn := getConnectionById(b.ConnectionID)
+	if !conn.Active {
+		c.AbortWithStatus(http.StatusOK)
 		return
 	}
 
 	var update tgbotapi.Update
-
-	bytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(token, err)
-		w.WriteHeader(http.StatusInternalServerError)
+	if err := c.ShouldBindJSON(&update); err != nil {
+		c.Error(err)
 		return
 	}
 
 	if config.Debug {
-		logger.Debugf("telegramWebhookHandler: %v", string(bytes))
+		logger.Debugf("mgWebhookHandler request: %v", update)
 	}
 
-	err = json.Unmarshal(bytes, &update)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(token, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	var client = v1.New(c.MGURL, c.MGToken)
+	var client = v1.New(conn.MGURL, conn.MGToken)
 
 	if update.Message != nil {
 		if update.Message.Text == "" {
 			setLocale(update.Message.From.LanguageCode)
-			update.Message.Text = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: getMessageID(update.Message)})
+			update.Message.Text = getLocalizedMessage(getMessageID(update.Message))
 		}
 
 		nickname := update.Message.From.UserName
@@ -92,18 +63,14 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		if user.Expired(config.UpdateInterval) || user.ID == 0 {
 			fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
 			if err != nil {
-				raven.CaptureErrorAndWait(err, nil)
-				logger.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
+				c.Error(err)
 				return
 			}
 
 			if fileID != user.UserPhotoID && fileURL != "" {
 				picURL, err := UploadUserAvatar(fileURL)
 				if err != nil {
-					raven.CaptureErrorAndWait(err, nil)
-					logger.Error(err)
-					w.WriteHeader(http.StatusInternalServerError)
+					c.Error(err)
 					return
 				}
 
@@ -117,9 +84,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 			err = user.save()
 			if err != nil {
-				raven.CaptureErrorAndWait(err, nil)
-				logger.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
+				c.Error(err)
 				return
 			}
 		}
@@ -161,9 +126,8 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 		data, st, err := client.Messages(snd)
 		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(token, err.Error(), st, data)
-			w.WriteHeader(http.StatusInternalServerError)
+			c.Error(err)
 			return
 		}
 
@@ -175,7 +139,7 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 	if update.EditedMessage != nil {
 		if update.EditedMessage.Text == "" {
 			setLocale(update.EditedMessage.From.LanguageCode)
-			update.EditedMessage.Text = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: getMessageID(update.Message)})
+			update.EditedMessage.Text = getLocalizedMessage(getMessageID(update.Message))
 		}
 
 		snd := v1.UpdateData{
@@ -191,9 +155,8 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 
 		data, st, err := client.UpdateMessages(snd)
 		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(token, err.Error(), st, data)
-			w.WriteHeader(http.StatusInternalServerError)
+			c.Error(err)
 			return
 		}
 
@@ -202,63 +165,47 @@ func telegramWebhookHandler(w http.ResponseWriter, r *http.Request, token string
 		}
 	}
 
-	w.WriteHeader(http.StatusOK)
+	c.AbortWithStatus(http.StatusOK)
 }
 
-func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	clientID := r.Header.Get("Clientid")
+func mgWebhookHandler(c *gin.Context) {
+	clientID := c.GetHeader("Clientid")
 	if clientID == "" {
 		logger.Error("mgWebhookHandler clientID is empty")
-		w.WriteHeader(http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	c := getConnection(clientID)
-	if !c.Active {
-		logger.Error(c.ClientID, "mgWebhookHandler: connection deactivated")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Connection deactivated"))
+	conn := getConnection(clientID)
+	if !conn.Active {
+		logger.Error(conn.ClientID, "mgWebhookHandler: connection deactivated")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Connection deactivated"})
 		return
 	}
 
-	bytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
+	var msg v1.WebhookRequest
+	if err := c.ShouldBindJSON(&msg); err != nil {
+		c.Error(err)
 		return
 	}
 
 	if config.Debug {
-		logger.Debugf("mgWebhookHandler request: %v", string(bytes))
-	}
-
-	var msg v1.WebhookRequest
-	err = json.Unmarshal(bytes, &msg)
-	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		logger.Debugf("mgWebhookHandler request: %v", msg)
 	}
 
 	uid, _ := strconv.Atoi(msg.Data.ExternalMessageID)
 	cid, _ := strconv.ParseInt(msg.Data.ExternalChatID, 10, 64)
 
-	b := getBot(c.ID, msg.Data.ChannelID)
+	b := getBot(conn.ID, msg.Data.ChannelID)
 	if b.ID == 0 {
 		logger.Error(msg.Data.ChannelID, "mgWebhookHandler: missing or deactivated")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("missing or deactivated"))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing or deactivated"})
 		return
 	}
 
 	bot, err := tgbotapi.NewBotAPI(b.Token)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		c.Error(err)
 		return
 	}
 
@@ -268,9 +215,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		if msg.Data.QuoteExternalID != "" {
 			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
 			if err != nil {
-				raven.CaptureErrorAndWait(err, nil)
-				logger.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
+				c.Error(err)
 				return
 			}
 			m.ReplyToMessageID = qid
@@ -278,9 +223,8 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 
 		msg, err := bot.Send(m)
 		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
-			w.WriteHeader(http.StatusBadRequest)
+			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
@@ -288,27 +232,14 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			logger.Debugf("mgWebhookHandler sent %v", msg)
 		}
 
-		rsp, err := json.Marshal(map[string]string{"external_message_id": strconv.Itoa(msg.MessageID)})
-		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			logger.Error(err)
-			return
-		}
-
-		if config.Debug {
-			logger.Debugf("mgWebhookHandler sent response %v", string(rsp))
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(rsp)
+		c.JSON(http.StatusOK, gin.H{"external_message_id": strconv.Itoa(msg.MessageID)})
 	}
 
 	if msg.Type == "message_updated" {
 		msg, err := bot.Send(tgbotapi.NewEditMessageText(cid, uid, msg.Data.Content))
 		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
-			w.WriteHeader(http.StatusBadRequest)
+			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
@@ -316,16 +247,14 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			logger.Debugf("mgWebhookHandler update %v", msg)
 		}
 
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Message updated"))
+		c.JSON(http.StatusOK, gin.H{"message": "Message updated"})
 	}
 
 	if msg.Type == "message_deleted" {
 		msg, err := bot.Send(tgbotapi.NewDeleteMessage(cid, uid))
 		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
 			logger.Error(err)
-			w.WriteHeader(http.StatusBadRequest)
+			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
@@ -333,8 +262,7 @@ func mgWebhookHandler(w http.ResponseWriter, r *http.Request) {
 			logger.Debugf("mgWebhookHandler delete %v", msg)
 		}
 
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Message deleted"))
+		c.JSON(http.StatusOK, gin.H{"message": "Message deleted"})
 	}
 }
 

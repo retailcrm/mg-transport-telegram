@@ -20,3 +20,7 @@ config_aws:
     bucket: ~
     folder_name: ~
     content_type: image/jpeg
+
+credentials:
+  - "/api/integration-modules/{code}"
+  - "/api/integration-modules/{code}/edit"

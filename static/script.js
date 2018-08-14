@@ -3,8 +3,12 @@ $('#save-crm').on("submit", function(e) {
     send(
         $(this).attr('action'),
         formDataToObj($(this).serializeArray()),
-        function () {
-            return 0;
+        function (data) {
+            sessionStorage.setItem("createdMsg", data.message);
+
+            document.location.replace(
+                location.protocol.concat("//").concat(window.location.host) + data.url
+            );
         }
     )
 });
@@ -15,7 +19,7 @@ $("#save").on("submit", function(e) {
         $(this).attr('action'),
         formDataToObj($(this).serializeArray()),
         function (data) {
-            M.toast({html: data});
+            M.toast({html: data.message});
         }
     )
 });
@@ -62,17 +66,8 @@ function send(url, data, callback) {
         type: "POST",
         success: callback,
         error: function (res){
-            if (res.status < 400) {
-                if (res.responseText) {
-                    let resObj = JSON.parse(res.responseText);
-                    sessionStorage.setItem("createdMsg", resObj.Message);
-
-                    document.location.replace(
-                        location.protocol.concat("//").concat(window.location.host) + resObj.Url
-                    );
-                }
-            } else {
-                M.toast({html: res.responseText})
+            if (res.status >= 400) {
+                M.toast({html: res.responseJSON.error})
             }
         }
     });
