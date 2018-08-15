@@ -1,20 +1,17 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
-
-	"io/ioutil"
 
 	"github.com/getsentry/raven-go"
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	_ "github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/source/file"
-	"gopkg.in/go-playground/validator.v9"
-	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -57,12 +54,7 @@ func start() {
 
 func setup() *gin.Engine {
 	loadTranslateFile()
-
-	binding.Validator = new(defaultValidator)
-
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("validatecrmurl", validateCrmURL)
-	}
+	setValidation()
 
 	if config.Debug == false {
 		gin.SetMode(gin.ReleaseMode)
@@ -94,12 +86,12 @@ func setup() *gin.Engine {
 
 	r.Use(ErrorHandler(errorHandlers...))
 
-	r.GET("/", connectHandler)
+	r.GET("/", checkAccountForRequest(), connectHandler)
 	r.GET("/settings/:uid", settingsHandler)
-	r.POST("/save/", saveHandler)
-	r.POST("/create/", createHandler)
-	r.POST("/add-bot/", addBotHandler)
-	r.POST("/delete-bot/", deleteBotHandler)
+	r.POST("/save/", checkConnectionForRequest(), saveHandler)
+	r.POST("/create/", checkConnectionForRequest(), createHandler)
+	r.POST("/add-bot/", checkBotForRequest(), addBotHandler)
+	r.POST("/delete-bot/", checkBotForRequest(), deleteBotHandler)
 	r.POST("/actions/activity", activityHandler)
 	r.POST("/telegram/:token", telegramWebhookHandler)
 	r.POST("/webhook/", mgWebhookHandler)
@@ -114,15 +106,45 @@ func createHTMLRender() multitemplate.Renderer {
 	return r
 }
 
-func loadTranslateFile() {
-	bundle.RegisterUnmarshalFunc("yml", yaml.Unmarshal)
-	files, err := ioutil.ReadDir("translate")
-	if err != nil {
-		logger.Error(err)
-	}
-	for _, f := range files {
-		if !f.IsDir() {
-			bundle.MustLoadMessageFile("translate/" + f.Name())
+func checkAccountForRequest() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		rx := regexp.MustCompile(`/+$`)
+		ra := rx.ReplaceAllString(c.Query("account"), ``)
+		p := Connection{
+			APIURL: ra,
 		}
+
+		c.Set("account", p)
+	}
+}
+
+func checkBotForRequest() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var b Bot
+
+		if err := c.ShouldBindJSON(&b); err != nil {
+			c.Error(err)
+			return
+		}
+
+		if b.Token == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("no_bot_token")})
+			return
+		}
+
+		c.Set("bot", b)
+	}
+}
+
+func checkConnectionForRequest() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var conn Connection
+
+		if err := c.BindJSON(&conn); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("incorrect_url_key")})
+			return
+		}
+
+		c.Set("connection", conn)
 	}
 }

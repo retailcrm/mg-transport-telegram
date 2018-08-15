@@ -10,15 +10,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/h2non/gock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var router *gin.Engine
+
 func init() {
 	config = LoadConfig("config_test.yml")
 	orm = NewDb(config)
 	logger = newLogger()
+	router = setup()
 
 	c := Connection{
 		ID:       1,
@@ -41,9 +45,8 @@ func TestRouting_connectHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(connectHandler)
+	router.ServeHTTP(rr, req)
 
-	handler.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
 }
@@ -83,8 +86,7 @@ func TestRouting_addBotHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(addBotHandler)
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 	require.Equal(t, http.StatusCreated, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusCreated))
 
@@ -120,8 +122,7 @@ func TestRouting_deleteBotHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(deleteBotHandler)
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
@@ -134,8 +135,7 @@ func TestRouting_settingsHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(makeHandler(settingsHandler))
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
@@ -160,8 +160,7 @@ func TestRouting_saveHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(saveHandler)
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
@@ -177,8 +176,7 @@ func TestRouting_activityHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(activityHandler)
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))

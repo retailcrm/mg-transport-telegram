@@ -74,14 +74,14 @@ function send(url, data, callback) {
 }
 
 function getBotTemplate(data) {
-    let bot = JSON.parse(data);
+    // let bot = JSON.parse(data);
     tmpl =
         `<tr>
-            <td>${bot.name}</td>
-            <td>${bot.token}</td>
+            <td>${data.name}</td>
+            <td>${data.token}</td>
             <td>
                 <button class="delete-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
-                        data-token="${bot.token}">
+                        data-token="${data.token}">
                     <i class="material-icons">delete</i>
                 </button>
             </td>

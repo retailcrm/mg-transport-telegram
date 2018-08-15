@@ -50,6 +50,14 @@ func kindOfData(data interface{}) reflect.Kind {
 	return valueType
 }
 
+func setValidation() {
+	binding.Validator = new(defaultValidator)
+
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("validatecrmurl", validateCrmURL)
+	}
+}
+
 func validateCrmURL(field validator.FieldLevel) bool {
 	regCommandName := regexp.MustCompile(`https://?[\da-z.-]+\.(retailcrm\.(ru|pro)|ecomlogic\.com)`)
 

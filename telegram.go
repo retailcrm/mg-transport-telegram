@@ -126,7 +126,7 @@ func telegramWebhookHandler(c *gin.Context) {
 
 		data, st, err := client.Messages(snd)
 		if err != nil {
-			logger.Error(token, err.Error(), st, data)
+			logger.Error(b.Token, err.Error(), st, data)
 			c.Error(err)
 			return
 		}
@@ -155,7 +155,7 @@ func telegramWebhookHandler(c *gin.Context) {
 
 		data, st, err := client.UpdateMessages(snd)
 		if err != nil {
-			logger.Error(token, err.Error(), st, data)
+			logger.Error(b.Token, err.Error(), st, data)
 			c.Error(err)
 			return
 		}
@@ -165,21 +165,19 @@ func telegramWebhookHandler(c *gin.Context) {
 		}
 	}
 
-	c.AbortWithStatus(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func mgWebhookHandler(c *gin.Context) {
 	clientID := c.GetHeader("Clientid")
 	if clientID == "" {
-		logger.Error("mgWebhookHandler clientID is empty")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	conn := getConnection(clientID)
 	if !conn.Active {
-		logger.Error(conn.ClientID, "mgWebhookHandler: connection deactivated")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Connection deactivated"})
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
@@ -198,8 +196,7 @@ func mgWebhookHandler(c *gin.Context) {
 
 	b := getBot(conn.ID, msg.Data.ChannelID)
 	if b.ID == 0 {
-		logger.Error(msg.Data.ChannelID, "mgWebhookHandler: missing or deactivated")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing or deactivated"})
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
@@ -221,7 +218,7 @@ func mgWebhookHandler(c *gin.Context) {
 			m.ReplyToMessageID = qid
 		}
 
-		msg, err := bot.Send(m)
+		msgSend, err := bot.Send(m)
 		if err != nil {
 			logger.Error(err)
 			c.AbortWithStatus(http.StatusBadRequest)
@@ -229,14 +226,14 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler sent %v", msg)
+			logger.Debugf("mgWebhookHandler sent %v", msgSend)
 		}
 
-		c.JSON(http.StatusOK, gin.H{"external_message_id": strconv.Itoa(msg.MessageID)})
+		c.JSON(http.StatusOK, gin.H{"external_message_id": strconv.Itoa(msgSend.MessageID)})
 	}
 
 	if msg.Type == "message_updated" {
-		msg, err := bot.Send(tgbotapi.NewEditMessageText(cid, uid, msg.Data.Content))
+		msgSend, err := bot.Send(tgbotapi.NewEditMessageText(cid, uid, msg.Data.Content))
 		if err != nil {
 			logger.Error(err)
 			c.AbortWithStatus(http.StatusBadRequest)
@@ -244,14 +241,14 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler update %v", msg)
+			logger.Debugf("mgWebhookHandler update %v", msgSend)
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Message updated"})
+		c.AbortWithStatus(http.StatusOK)
 	}
 
 	if msg.Type == "message_deleted" {
-		msg, err := bot.Send(tgbotapi.NewDeleteMessage(cid, uid))
+		msgSend, err := bot.Send(tgbotapi.NewDeleteMessage(cid, uid))
 		if err != nil {
 			logger.Error(err)
 			c.AbortWithStatus(http.StatusBadRequest)
@@ -259,10 +256,10 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler delete %v", msg)
+			logger.Debugf("mgWebhookHandler delete %v", msgSend)
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Message deleted"})
+		c.JSON(http.StatusOK, gin.H{})
 	}
 }
 

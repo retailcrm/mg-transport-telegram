@@ -1,10 +1,9 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"regexp"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
@@ -13,17 +12,11 @@ import (
 )
 
 func connectHandler(c *gin.Context) {
-	rx := regexp.MustCompile(`/+$`)
-	ra := rx.ReplaceAllString(c.Query("account"), ``)
-	p := Connection{
-		APIURL: ra,
-	}
-
 	res := struct {
-		Conn   *Connection
+		Conn   Connection
 		Locale map[string]string
 	}{
-		&p,
+		c.MustGet("account").(Connection),
 		getLocale(),
 	}
 
@@ -31,18 +24,7 @@ func connectHandler(c *gin.Context) {
 }
 
 func addBotHandler(c *gin.Context) {
-	var b Bot
-
-	if err := c.ShouldBindJSON(&b); err != nil {
-		c.Error(err)
-		return
-	}
-
-	if b.Token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("no_bot_token")})
-		return
-	}
-
+	b := c.MustGet("bot").(Bot)
 	cl, err := getBotByToken(b.Token)
 	if err != nil {
 		c.Error(err)
@@ -106,23 +88,11 @@ func addBotHandler(c *gin.Context) {
 		return
 	}
 
-	jsonString, err := json.Marshal(b)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	c.JSON(http.StatusCreated, jsonString)
+	c.JSON(http.StatusCreated, b)
 }
 
 func deleteBotHandler(c *gin.Context) {
-	var b Bot
-
-	if err := c.ShouldBindJSON(&b); err != nil {
-		c.Error(err)
-		return
-	}
-
+	b := c.MustGet("bot").(Bot)
 	conn := getConnectionById(b.ConnectionID)
 	if conn.MGURL == "" || conn.MGToken == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("not_found_account")})
@@ -173,13 +143,7 @@ func settingsHandler(c *gin.Context) {
 }
 
 func saveHandler(c *gin.Context) {
-	var conn Connection
-
-	if err := c.BindJSON(&conn); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("incorrect_url_key")})
-		return
-	}
-
+	conn := c.MustGet("connection").(Connection)
 	_, err, code := getAPIClient(conn.APIURL, conn.APIKEY)
 	if err != nil {
 		c.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
@@ -196,14 +160,7 @@ func saveHandler(c *gin.Context) {
 }
 
 func createHandler(c *gin.Context) {
-	var conn Connection
-
-	if err := c.BindJSON(&conn); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("incorrect_url_key")})
-		return
-	}
-
-	conn.ClientID = GenerateToken()
+	conn := c.MustGet("connection").(Connection)
 
 	cl := getConnectionByURL(conn.APIURL)
 	if cl.ID != 0 {
@@ -217,37 +174,8 @@ func createHandler(c *gin.Context) {
 		return
 	}
 
-	integration := v5.IntegrationModule{
-		Code:            transport,
-		IntegrationCode: transport,
-		Active:          true,
-		Name:            "Telegram",
-		ClientID:        conn.ClientID,
-		Logo: fmt.Sprintf(
-			"https://%s/static/telegram_logo.svg",
-			config.HTTPServer.Host,
-		),
-		BaseURL: fmt.Sprintf(
-			"https://%s",
-			config.HTTPServer.Host,
-		),
-		AccountURL: fmt.Sprintf(
-			"https://%s/settings/%s",
-			config.HTTPServer.Host,
-			conn.ClientID,
-		),
-		Actions: map[string]string{"activity": "/actions/activity"},
-		Integrations: &v5.Integrations{
-			MgTransport: &v5.MgTransport{
-				WebhookUrl: fmt.Sprintf(
-					"https://%s/webhook/",
-					config.HTTPServer.Host,
-				),
-			},
-		},
-	}
-
-	data, status, errr := client.IntegrationModuleEdit(integration)
+	conn.ClientID = GenerateToken()
+	data, status, errr := client.IntegrationModuleEdit(getIntegrationModule(conn.ClientID))
 	if errr.RuntimeErr != nil {
 		c.Error(errr.RuntimeErr)
 		return
@@ -305,4 +233,36 @@ func activityHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func getIntegrationModule(clientId string) v5.IntegrationModule {
+	return v5.IntegrationModule{
+		Code:            transport,
+		IntegrationCode: transport,
+		Active:          true,
+		Name:            "Telegram",
+		ClientID:        clientId,
+		Logo: fmt.Sprintf(
+			"https://%s/static/telegram_logo.svg",
+			config.HTTPServer.Host,
+		),
+		BaseURL: fmt.Sprintf(
+			"https://%s",
+			config.HTTPServer.Host,
+		),
+		AccountURL: fmt.Sprintf(
+			"https://%s/settings/%s",
+			config.HTTPServer.Host,
+			clientId,
+		),
+		Actions: map[string]string{"activity": "/actions/activity"},
+		Integrations: &v5.Integrations{
+			MgTransport: &v5.MgTransport{
+				WebhookUrl: fmt.Sprintf(
+					"https://%s/webhook/",
+					config.HTTPServer.Host,
+				),
+			},
+		},
+	}
 }

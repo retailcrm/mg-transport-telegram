@@ -3,3 +3,4 @@ config_test.yml
 .idea/
 /bin/*
 *.xml
+/vendor

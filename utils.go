@@ -11,31 +11,7 @@ import (
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/retailcrm/api-client-go/v5"
-	"golang.org/x/text/language"
 )
-
-func setLocale(al string) {
-	tag, _ := language.MatchStrings(matcher, al)
-	localizer = i18n.NewLocalizer(bundle, tag.String())
-}
-
-func getLocale() map[string]string {
-	return map[string]string{
-		"ButtonSave":  getLocalizedMessage("button_save"),
-		"ApiKey":      getLocalizedMessage("api_key"),
-		"TabSettings": getLocalizedMessage("tab_settings"),
-		"TabBots":     getLocalizedMessage("tab_bots"),
-		"TableName":   getLocalizedMessage("table_name"),
-		"TableToken":  getLocalizedMessage("table_token"),
-		"AddBot":      getLocalizedMessage("add_bot"),
-		"TableDelete": getLocalizedMessage("table_delete"),
-		"Title":       getLocalizedMessage("title"),
-	}
-}
-
-func getLocalizedMessage(messageID string) string {
-	return localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: messageID})
-}
 
 // GenerateToken function
 func GenerateToken() string {
