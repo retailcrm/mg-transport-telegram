@@ -26,7 +26,7 @@ func getAPIClient(url, key string) (*v5.Client, error, int) {
 	cr, status, e := client.APICredentials()
 	if e.RuntimeErr != nil {
 		logger.Error(url, status, e.RuntimeErr, cr)
-		return nil, errors.New(getLocalizedMessage("not_found_account")), http.StatusInternalServerError
+		return nil, e.RuntimeErr, http.StatusInternalServerError
 
 	}
 
@@ -51,7 +51,8 @@ func getAPIClient(url, key string) (*v5.Client, error, int) {
 }
 
 func checkCredentials(credential []string) []string {
-	rc := config.Credentials
+	rc := make([]string, len(config.Credentials))
+	copy(rc, config.Credentials)
 
 	for _, vc := range credential {
 		for kn, vn := range rc {

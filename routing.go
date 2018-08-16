@@ -38,8 +38,8 @@ func addBotHandler(c *gin.Context) {
 
 	bot, err := tgbotapi.NewBotAPI(b.Token)
 	if err != nil {
-		logger.Error(b.Token, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("incorrect_token")})
+		logger.Error(b.Token, err.Error())
 		return
 	}
 
@@ -47,14 +47,14 @@ func addBotHandler(c *gin.Context) {
 
 	wr, err := bot.SetWebhook(tgbotapi.NewWebhook("https://" + config.HTTPServer.Host + "/telegram/" + bot.Token))
 	if err != nil {
-		logger.Error(b.Token, err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("error_creating_webhook")})
+		logger.Error(b.Token, err.Error())
 		return
 	}
 
 	if !wr.Ok {
-		logger.Error(b.Token, wr.ErrorCode, wr.Result)
 		c.JSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("error_creating_webhook")})
+		logger.Error(b.Token, wr.ErrorCode, wr.Result)
 		return
 	}
 
@@ -75,8 +75,8 @@ func addBotHandler(c *gin.Context) {
 	var client = v1.New(conn.MGURL, conn.MGToken)
 	data, status, err := client.ActivateTransportChannel(ch)
 	if status != http.StatusCreated {
-		logger.Error(conn.APIURL, status, err.Error(), data)
 		c.JSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("error_activating_channel")})
+		logger.Error(conn.APIURL, status, err.Error(), data)
 		return
 	}
 
@@ -146,7 +146,7 @@ func saveHandler(c *gin.Context) {
 	conn := c.MustGet("connection").(Connection)
 	_, err, code := getAPIClient(conn.APIURL, conn.APIKEY)
 	if err != nil {
-		c.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+		c.JSON(code, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -164,13 +164,17 @@ func createHandler(c *gin.Context) {
 
 	cl := getConnectionByURL(conn.APIURL)
 	if cl.ID != 0 {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("connection_already_created")})
+		c.JSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("connection_already_created")})
 		return
 	}
 
-	client, err, _ := getAPIClient(conn.APIURL, conn.APIKEY)
+	client, err, code := getAPIClient(conn.APIURL, conn.APIKEY)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if code == http.StatusInternalServerError {
+			c.Error(err)
+		} else {
+			c.JSON(code, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -216,7 +220,7 @@ func activityHandler(c *gin.Context) {
 
 	conn := getConnection(rec.ClientId)
 	if conn.ID == 0 {
-		c.AbortWithStatusJSON(http.StatusBadRequest,
+		c.JSON(http.StatusBadRequest,
 			gin.H{
 				"success": false,
 				"error":   "Wrong data",
@@ -237,14 +241,15 @@ func activityHandler(c *gin.Context) {
 
 func getIntegrationModule(clientId string) v5.IntegrationModule {
 	return v5.IntegrationModule{
-		Code:            transport,
-		IntegrationCode: transport,
+		Code:            config.TransportInfo.Code,
+		IntegrationCode: config.TransportInfo.Code,
 		Active:          true,
-		Name:            "Telegram",
+		Name:            config.TransportInfo.Name,
 		ClientID:        clientId,
 		Logo: fmt.Sprintf(
-			"https://%s/static/telegram_logo.svg",
+			"https://%s%s",
 			config.HTTPServer.Host,
+			config.TransportInfo.LogoPath,
 		),
 		BaseURL: fmt.Sprintf(
 			"https://%s",

@@ -18,6 +18,13 @@ type TransportConfig struct {
 	UpdateInterval int              `yaml:"update_interval"`
 	ConfigAWS      ConfigAWS        `yaml:"config_aws"`
 	Credentials    []string         `yaml:"credentials"`
+	TransportInfo  TransportInfo    `yaml:"transport_info"`
+}
+
+type TransportInfo struct {
+	Name     string `yaml:"name"`
+	Code     string `yaml:"code"`
+	LogoPath string `yaml:"logo_path"`
 }
 
 // ConfigAWS struct

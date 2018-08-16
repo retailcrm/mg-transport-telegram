@@ -75,13 +75,12 @@ func setup() *gin.Engine {
 
 	errorHandlers := []ErrorHandlerFunc{
 		PanicLogger(),
-		ErrorLogger(),
 		ErrorResponseHandler(),
 	}
-	sentry, _ := raven.New(config.SentryDSN)
 
+	sentry, _ := raven.New(config.SentryDSN)
 	if sentry != nil {
-		errorHandlers = append(errorHandlers, ErrorCaptureHandler(sentry, false))
+		errorHandlers = append(errorHandlers, ErrorCaptureHandler(sentry, true))
 	}
 
 	r.Use(ErrorHandler(errorHandlers...))
@@ -128,7 +127,7 @@ func checkBotForRequest() gin.HandlerFunc {
 		}
 
 		if b.Token == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("no_bot_token")})
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("no_bot_token")})
 			return
 		}
 
@@ -140,7 +139,7 @@ func checkConnectionForRequest() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var conn Connection
 
-		if err := c.BindJSON(&conn); err != nil {
+		if err := c.ShouldBindJSON(&conn); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("incorrect_url_key")})
 			return
 		}

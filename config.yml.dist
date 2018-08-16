@@ -5,6 +5,11 @@ http_server:
   host: ~
   listen: :3001
 
+transport_info:
+  name: Telegram
+  code: mg-telegram
+  logo_path: /static/telegram_logo.svg
+
 sentry_dsn: ~
 
 log_level: 5

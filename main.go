@@ -13,8 +13,6 @@ type Options struct {
 	Config string `short:"c" long:"config" default:"config.yml" description:"Path to configuration file"`
 }
 
-const transport = "mg-telegram"
-
 var (
 	config       *TransportConfig
 	orm          *Orm

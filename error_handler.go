@@ -54,7 +54,7 @@ func ErrorResponseHandler() ErrorHandlerFunc {
 		}
 
 		if privateLen > 0 || recovery != nil {
-			messages[index] = "Something went wrong"
+			messages[index] = getLocalizedMessage("error_save")
 		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": messages})
@@ -98,7 +98,7 @@ func ErrorCaptureHandler(client *raven.Client, errorsStacktrace bool) ErrorHandl
 func PanicLogger() ErrorHandlerFunc {
 	return func(recovery interface{}, c *gin.Context) {
 		if recovery != nil {
-			logger.Error(recovery)
+			logger.Error(c.Request.RequestURI, recovery)
 			debug.PrintStack()
 		}
 	}
@@ -107,7 +107,7 @@ func PanicLogger() ErrorHandlerFunc {
 func ErrorLogger() ErrorHandlerFunc {
 	return func(recovery interface{}, c *gin.Context) {
 		for _, err := range c.Errors {
-			logger.Error(err.Err)
+			logger.Error(c.Request.RequestURI, err.Err)
 		}
 	}
 }
