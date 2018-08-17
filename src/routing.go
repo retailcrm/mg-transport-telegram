@@ -1,9 +1,10 @@
 package main
 
 import (
-	"net/http"
-
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
@@ -269,5 +270,252 @@ func getIntegrationModule(clientId string) v5.IntegrationModule {
 				),
 			},
 		},
+	}
+}
+
+func telegramWebhookHandler(c *gin.Context) {
+	token := c.Param("token")
+	b, err := getBotByToken(token)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	if b.ID == 0 {
+		c.AbortWithStatus(http.StatusOK)
+		return
+	}
+
+	conn := getConnectionById(b.ConnectionID)
+	if !conn.Active {
+		c.AbortWithStatus(http.StatusOK)
+		return
+	}
+
+	var update tgbotapi.Update
+	if err := c.ShouldBindJSON(&update); err != nil {
+		c.Error(err)
+		return
+	}
+
+	if config.Debug {
+		logger.Debugf("mgWebhookHandler request: %v", update)
+	}
+
+	var client = v1.New(conn.MGURL, conn.MGToken)
+
+	if update.Message != nil {
+		if update.Message.Text == "" {
+			setLocale(update.Message.From.LanguageCode)
+			update.Message.Text = getLocalizedMessage(getMessageID(update.Message))
+		}
+
+		nickname := update.Message.From.UserName
+		user := getUserByExternalID(update.Message.From.ID)
+
+		if update.Message.From.UserName == "" {
+			nickname = update.Message.From.FirstName
+		}
+
+		if user.Expired(config.UpdateInterval) || user.ID == 0 {
+			fileID, fileURL, err := GetFileIDAndURL(b.Token, update.Message.From.ID)
+			if err != nil {
+				c.Error(err)
+				return
+			}
+
+			if fileID != user.UserPhotoID && fileURL != "" {
+				picURL, err := UploadUserAvatar(fileURL)
+				if err != nil {
+					c.Error(err)
+					return
+				}
+
+				user.UserPhotoID = fileID
+				user.UserPhotoURL = picURL
+			}
+
+			if user.ExternalID == 0 {
+				user.ExternalID = update.Message.From.ID
+			}
+
+			err = user.save()
+			if err != nil {
+				c.Error(err)
+				return
+			}
+		}
+
+		lang := update.Message.From.LanguageCode
+
+		if len(update.Message.From.LanguageCode) > 2 {
+			lang = update.Message.From.LanguageCode[:2]
+		}
+
+		if config.Debug {
+			logger.Debugf("telegramWebhookHandler user %v", user)
+		}
+
+		snd := v1.SendData{
+			Message: v1.SendMessage{
+				Message: v1.Message{
+					ExternalID: strconv.Itoa(update.Message.MessageID),
+					Type:       "text",
+					Text:       update.Message.Text,
+				},
+				SentAt: time.Now(),
+			},
+			User: v1.User{
+				ExternalID: strconv.Itoa(update.Message.From.ID),
+				Nickname:   nickname,
+				Firstname:  update.Message.From.FirstName,
+				Avatar:     user.UserPhotoURL,
+				Lastname:   update.Message.From.LastName,
+				Language:   lang,
+			},
+			Channel:        b.Channel,
+			ExternalChatID: strconv.FormatInt(update.Message.Chat.ID, 10),
+		}
+
+		if update.Message.ReplyToMessage != nil {
+			snd.Quote = &v1.SendMessageRequestQuote{ExternalID: strconv.Itoa(update.Message.ReplyToMessage.MessageID)}
+		}
+
+		data, st, err := client.Messages(snd)
+		if err != nil {
+			logger.Error(b.Token, err.Error(), st, data)
+			c.Error(err)
+			return
+		}
+
+		if config.Debug {
+			logger.Debugf("telegramWebhookHandler Type: SendMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+		}
+	}
+
+	if update.EditedMessage != nil {
+		if update.EditedMessage.Text == "" {
+			setLocale(update.EditedMessage.From.LanguageCode)
+			update.EditedMessage.Text = getLocalizedMessage(getMessageID(update.Message))
+		}
+
+		snd := v1.UpdateData{
+			Message: v1.UpdateMessage{
+				Message: v1.Message{
+					ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
+					Type:       "text",
+					Text:       update.EditedMessage.Text,
+				},
+			},
+			Channel: b.Channel,
+		}
+
+		data, st, err := client.UpdateMessages(snd)
+		if err != nil {
+			logger.Error(b.Token, err.Error(), st, data)
+			c.Error(err)
+			return
+		}
+
+		if config.Debug {
+			logger.Debugf("telegramWebhookHandler Type: UpdateMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
+}
+
+func mgWebhookHandler(c *gin.Context) {
+	clientID := c.GetHeader("Clientid")
+	if clientID == "" {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	conn := getConnection(clientID)
+	if !conn.Active {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	var msg v1.WebhookRequest
+	if err := c.ShouldBindJSON(&msg); err != nil {
+		c.Error(err)
+		return
+	}
+
+	if config.Debug {
+		logger.Debugf("mgWebhookHandler request: %v", msg)
+	}
+
+	uid, _ := strconv.Atoi(msg.Data.ExternalMessageID)
+	cid, _ := strconv.ParseInt(msg.Data.ExternalChatID, 10, 64)
+
+	b := getBot(conn.ID, msg.Data.ChannelID)
+	if b.ID == 0 {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	bot, err := tgbotapi.NewBotAPI(b.Token)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	if msg.Type == "message_sent" {
+		m := tgbotapi.NewMessage(cid, msg.Data.Content)
+
+		if msg.Data.QuoteExternalID != "" {
+			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
+			if err != nil {
+				c.Error(err)
+				return
+			}
+			m.ReplyToMessageID = qid
+		}
+
+		msgSend, err := bot.Send(m)
+		if err != nil {
+			logger.Error(err)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		if config.Debug {
+			logger.Debugf("mgWebhookHandler sent %v", msgSend)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"external_message_id": strconv.Itoa(msgSend.MessageID)})
+	}
+
+	if msg.Type == "message_updated" {
+		msgSend, err := bot.Send(tgbotapi.NewEditMessageText(cid, uid, msg.Data.Content))
+		if err != nil {
+			logger.Error(err)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		if config.Debug {
+			logger.Debugf("mgWebhookHandler update %v", msgSend)
+		}
+
+		c.AbortWithStatus(http.StatusOK)
+	}
+
+	if msg.Type == "message_deleted" {
+		msgSend, err := bot.Send(tgbotapi.NewDeleteMessage(cid, uid))
+		if err != nil {
+			logger.Error(err)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		if config.Debug {
+			logger.Debugf("mgWebhookHandler delete %v", msgSend)
+		}
+
+		c.JSON(http.StatusOK, gin.H{})
 	}
 }

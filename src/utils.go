@@ -9,6 +9,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/retailcrm/api-client-go/v5"
 )
@@ -67,4 +71,43 @@ func checkCredentials(credential []string) []string {
 	}
 
 	return rc
+}
+
+//UploadUserAvatar function
+func UploadUserAvatar(url string) (picURLs3 string, err error) {
+	s3Config := &aws.Config{
+		Credentials: credentials.NewStaticCredentials(
+			config.ConfigAWS.AccessKeyID,
+			config.ConfigAWS.SecretAccessKey,
+			""),
+		Region: aws.String(config.ConfigAWS.Region),
+	}
+
+	s := session.Must(session.NewSession(s3Config))
+	uploader := s3manager.NewUploader(s)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return "", errors.New(fmt.Sprintf("get: %v code: %v", url, resp.StatusCode))
+	}
+
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket:      aws.String(config.ConfigAWS.Bucket),
+		Key:         aws.String(fmt.Sprintf("%v/%v.jpg", config.ConfigAWS.FolderName, GenerateToken())),
+		Body:        resp.Body,
+		ContentType: aws.String(config.ConfigAWS.ContentType),
+		ACL:         aws.String("public-read"),
+	})
+	if err != nil {
+		return
+	}
+
+	picURLs3 = result.Location
+
+	return
 }

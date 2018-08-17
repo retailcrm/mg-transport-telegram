@@ -1,20 +1,14 @@
 ROOT_DIR=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-SRC_DIR=$(ROOT_DIR)
+SRC_DIR=$(ROOT_DIR)/src
 MIGRATIONS_DIR=$(ROOT_DIR)/migrations
 CONFIG_FILE=$(ROOT_DIR)/config.yml
 CONFIG_TEST_FILE=$(ROOT_DIR)/config_test.yml
 BIN=$(ROOT_DIR)/bin/transport
 REVISION=$(shell git describe --tags 2>/dev/null || git log --format="v0.0-%h" -n 1 || echo "v0.0-unknown")
 
-ifndef GOPATH
-	$(error GOPATH must be defined)
-endif
-
-export GOPATH := $(GOPATH):$(ROOT_DIR)
-
 build: deps fmt
 	@echo "==> Building"
-	@cd $(ROOT_DIR) && CGO_ENABLED=0 go build -o $(BIN) -ldflags "-X common.build=${REVISION}" .
+	@cd $(SRC_DIR) && CGO_ENABLED=0 go build -o $(BIN) -ldflags "-X common.build=${REVISION}" .
 	@echo $(BIN)
 
 run: migrate
