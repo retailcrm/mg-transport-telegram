@@ -14,7 +14,7 @@ export GOPATH := $(GOPATH):$(ROOT_DIR)
 
 build: deps fmt
 	@echo "==> Building"
-	@go build -o $(BIN) -ldflags "-X common.build=${REVISION}" .
+	@cd $(ROOT_DIR) && CGO_ENABLED=0 go build -o $(BIN) -ldflags "-X common.build=${REVISION}" .
 	@echo $(BIN)
 
 run: migrate
@@ -36,10 +36,7 @@ fmt:
 
 deps:
 	@echo "==> Installing dependencies"
-	$(eval DEPS:=$(shell cd $(SRC_DIR) \
-	 	&& go list -f '{{join .Imports "\n"}}{{ "\n" }}{{join .TestImports "\n"}}' ./... \
-		| sort | uniq | tr '\r' '\n' | paste -sd ' ' -))
-	@go get -d -v $(DEPS)
+	@go mod tidy
 
 migrate: build
 	${BIN} --config $(CONFIG_FILE) migrate -p $(MIGRATIONS_DIR)
