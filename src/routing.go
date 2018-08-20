@@ -47,15 +47,9 @@ func addBotHandler(c *gin.Context) {
 	bot.Debug = config.Debug
 
 	wr, err := bot.SetWebhook(tgbotapi.NewWebhook("https://" + config.HTTPServer.Host + "/telegram/" + bot.Token))
-	if err != nil {
+	if err != nil || !wr.Ok {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("error_creating_webhook")})
-		logger.Error(b.Token, err.Error())
-		return
-	}
-
-	if !wr.Ok {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("error_creating_webhook")})
-		logger.Error(b.Token, wr.ErrorCode, wr.Result)
+		logger.Error(b.Token, err.Error(), wr)
 		return
 	}
 
@@ -63,11 +57,18 @@ func addBotHandler(c *gin.Context) {
 
 	ch := v1.Channel{
 		Type: "telegram",
-		Events: []string{
-			"message_sent",
-			"message_updated",
-			"message_deleted",
-			"message_read",
+		Settings: v1.ChannelSettings{
+			SpamAllowed: false,
+			Status: v1.Status{
+				Delivered: v1.ChannelFeatureNone,
+				Read:      v1.ChannelFeatureNone,
+			},
+			Text: v1.ChannelSettingsText{
+				Creating: v1.ChannelFeatureBoth,
+				Editing:  v1.ChannelFeatureBoth,
+				Quoting:  v1.ChannelFeatureBoth,
+				Deleting: v1.ChannelFeatureSend,
+			},
 		},
 	}
 
@@ -97,7 +98,6 @@ func deleteBotHandler(c *gin.Context) {
 	conn := getConnectionById(b.ConnectionID)
 	if conn.MGURL == "" || conn.MGToken == "" {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("not_found_account")})
-		logger.Error(b.ID, "MGURL or MGToken is empty")
 		return
 	}
 
@@ -459,7 +459,8 @@ func mgWebhookHandler(c *gin.Context) {
 
 	bot, err := tgbotapi.NewBotAPI(b.Token)
 	if err != nil {
-		c.Error(err)
+		logger.Error(b, err)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
