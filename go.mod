@@ -16,8 +16,6 @@ require (
 	github.com/gin-contrib/multitemplate v0.0.0-20180607024123-41d1d62d1df3
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v1.3.0
-	github.com/go-playground/locales v0.12.1 // indirect
-	github.com/go-playground/universal-translator v0.16.0 // indirect
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/go-telegram-bot-api/telegram-bot-api v0.0.0-20180602093832-4c16a90966d1
 	github.com/golang-migrate/migrate v3.4.0+incompatible
@@ -57,7 +55,6 @@ require (
 	golang.org/x/text v0.3.0
 	google.golang.org/appengine v1.1.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
-	gopkg.in/go-playground/validator.v9 v9.21.0
+	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/yaml.v2 v2.2.1
 )
