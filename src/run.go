@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"os"
 	"os/signal"
 	"regexp"
@@ -127,7 +126,7 @@ func checkBotForRequest() gin.HandlerFunc {
 		}
 
 		if b.Token == "" {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("no_bot_token")})
+			c.AbortWithStatusJSON(BadRequest("no_bot_token"))
 			return
 		}
 
@@ -140,7 +139,7 @@ func checkConnectionForRequest() gin.HandlerFunc {
 		var conn Connection
 
 		if err := c.ShouldBindJSON(&conn); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("incorrect_url_key")})
+			c.AbortWithStatusJSON(BadRequest("incorrect_url_key"))
 			return
 		}
 

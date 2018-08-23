@@ -33,13 +33,13 @@ func addBotHandler(c *gin.Context) {
 	}
 
 	if cl.ID != 0 {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("bot_already_created")})
+		c.AbortWithStatusJSON(BadRequest("bot_already_created"))
 		return
 	}
 
 	bot, err := tgbotapi.NewBotAPI(b.Token)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("incorrect_token")})
+		c.AbortWithStatusJSON(BadRequest("incorrect_token"))
 		logger.Error(b.Token, err.Error())
 		return
 	}
@@ -48,7 +48,7 @@ func addBotHandler(c *gin.Context) {
 
 	wr, err := bot.SetWebhook(tgbotapi.NewWebhook("https://" + config.HTTPServer.Host + "/telegram/" + bot.Token))
 	if err != nil || !wr.Ok {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("error_creating_webhook")})
+		c.AbortWithStatusJSON(BadRequest("error_creating_webhook"))
 		logger.Error(b.Token, err.Error(), wr)
 		return
 	}
@@ -60,14 +60,14 @@ func addBotHandler(c *gin.Context) {
 		Settings: v1.ChannelSettings{
 			SpamAllowed: false,
 			Status: v1.Status{
-				Delivered: v1.ChannelFeatureNone,
+				Delivered: v1.ChannelFeatureSend,
 				Read:      v1.ChannelFeatureNone,
 			},
 			Text: v1.ChannelSettingsText{
 				Creating: v1.ChannelFeatureBoth,
 				Editing:  v1.ChannelFeatureBoth,
 				Quoting:  v1.ChannelFeatureBoth,
-				Deleting: v1.ChannelFeatureSend,
+				Deleting: v1.ChannelFeatureReceive,
 			},
 		},
 	}
@@ -77,7 +77,7 @@ func addBotHandler(c *gin.Context) {
 	var client = v1.New(conn.MGURL, conn.MGToken)
 	data, status, err := client.ActivateTransportChannel(ch)
 	if status != http.StatusCreated {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("error_activating_channel")})
+		c.AbortWithStatusJSON(BadRequest("error_activating_channel"))
 		logger.Error(conn.APIURL, status, err.Error(), data)
 		return
 	}
@@ -97,7 +97,7 @@ func deleteBotHandler(c *gin.Context) {
 	b := c.MustGet("bot").(Bot)
 	conn := getConnectionById(b.ConnectionID)
 	if conn.MGURL == "" || conn.MGToken == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("not_found_account")})
+		c.AbortWithStatusJSON(BadRequest("not_found_account"))
 		return
 	}
 
@@ -105,7 +105,7 @@ func deleteBotHandler(c *gin.Context) {
 
 	data, status, err := client.DeactivateTransportChannel(getBotChannelByToken(b.Token))
 	if status > http.StatusOK {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("error_deactivating_channel")})
+		c.AbortWithStatusJSON(BadRequest("error_deactivating_channel"))
 		logger.Error(b.ID, status, err.Error(), data)
 		return
 	}
@@ -147,7 +147,11 @@ func saveHandler(c *gin.Context) {
 	conn := c.MustGet("connection").(Connection)
 	_, err, code := getAPIClient(conn.APIURL, conn.APIKEY)
 	if err != nil {
-		c.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+		if code == http.StatusInternalServerError {
+			c.Error(err)
+		} else {
+			c.AbortWithStatusJSON(BadRequest(err.Error()))
+		}
 		return
 	}
 
@@ -165,7 +169,7 @@ func createHandler(c *gin.Context) {
 
 	cl := getConnectionByURL(conn.APIURL)
 	if cl.ID != 0 {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("connection_already_created")})
+		c.AbortWithStatusJSON(BadRequest("connection_already_created"))
 		return
 	}
 
@@ -187,7 +191,7 @@ func createHandler(c *gin.Context) {
 	}
 
 	if status >= http.StatusBadRequest {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": getLocalizedMessage("error_activity_mg")})
+		c.AbortWithStatusJSON(BadRequest("error_activity_mg"))
 		logger.Error(conn.APIURL, status, errr.ApiErr, data)
 		return
 	}
