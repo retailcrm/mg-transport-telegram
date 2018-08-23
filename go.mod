@@ -3,7 +3,7 @@ module github.com/retailcrm/mg-transport-telegram
 require (
 	cloud.google.com/go v0.26.0 // indirect
 	github.com/Microsoft/go-winio v0.4.10 // indirect
-	github.com/aws/aws-sdk-go v1.15.16
+	github.com/aws/aws-sdk-go v1.15.18
 	github.com/certifi/gocertifi v0.0.0-20180118203423-deb3ae2ef261 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20180707235734-242fa5aa1b45 // indirect
@@ -16,6 +16,7 @@ require (
 	github.com/gin-contrib/multitemplate v0.0.0-20180607024123-41d1d62d1df3
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v1.3.0
+	github.com/go-ini/ini v1.38.2 // indirect
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/go-telegram-bot-api/telegram-bot-api v0.0.0-20180602093832-4c16a90966d1
 	github.com/golang-migrate/migrate v3.4.0+incompatible
@@ -32,7 +33,8 @@ require (
 	github.com/json-iterator/go v0.0.0-20180806060727-1624edc4454b // indirect
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/lib/pq v0.0.0-20180523175426-90697d60dd84 // indirect
+	github.com/kr/pty v1.1.2 // indirect
+	github.com/lib/pq v1.0.0 // indirect
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -53,7 +55,7 @@ require (
 	golang.org/x/crypto v0.0.0-20180820150726-614d502a4dac // indirect
 	golang.org/x/net v0.0.0-20180821023952-922f4815f713 // indirect
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
-	golang.org/x/sys v0.0.0-20180821044426-4ea2f632f6e9 // indirect
+	golang.org/x/sys v0.0.0-20180821140842-3b58ed4ad339 // indirect
 	golang.org/x/text v0.3.0
 	google.golang.org/appengine v1.1.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
