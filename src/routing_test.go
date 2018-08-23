@@ -7,19 +7,25 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/h2non/gock"
+	"github.com/retailcrm/mg-transport-api-client-go/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var router *gin.Engine
+
 func init() {
+	os.Chdir("../")
 	config = LoadConfig("config_test.yml")
 	orm = NewDb(config)
 	logger = newLogger()
-
+	router = setup()
 	c := Connection{
 		ID:       1,
 		ClientID: "123123",
@@ -41,9 +47,8 @@ func TestRouting_connectHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(connectHandler)
+	router.ServeHTTP(rr, req)
 
-	handler.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
 }
@@ -51,6 +56,24 @@ func TestRouting_connectHandler(t *testing.T) {
 func TestRouting_addBotHandler(t *testing.T) {
 	defer gock.Off()
 
+	ch := v1.Channel{
+		Type: "telegram",
+		Settings: v1.ChannelSettings{
+			SpamAllowed: false,
+			Status: v1.Status{
+				Delivered: v1.ChannelFeatureSend,
+				Read:      v1.ChannelFeatureNone,
+			},
+			Text: v1.ChannelSettingsText{
+				Creating: v1.ChannelFeatureBoth,
+				Editing:  v1.ChannelFeatureBoth,
+				Quoting:  v1.ChannelFeatureBoth,
+				Deleting: v1.ChannelFeatureReceive,
+			},
+		},
+	}
+
+	outgoing, _ := json.Marshal(ch)
 	p := url.Values{"url": {"https://" + config.HTTPServer.Host + "/telegram/123123:Qwerty"}}
 
 	gock.New("https://api.telegram.org").
@@ -72,7 +95,7 @@ func TestRouting_addBotHandler(t *testing.T) {
 
 	gock.New("https://test.retailcrm.pro").
 		Post("/api/transport/v1/channels").
-		BodyString(`{"ID":0,"Type":"telegram","Events":["message_sent","message_updated","message_deleted","message_read"]}`).
+		JSON([]byte(outgoing)).
 		MatchHeader("Content-Type", "application/json").
 		MatchHeader("X-Transport-Token", "test-token").
 		Reply(201).
@@ -83,8 +106,7 @@ func TestRouting_addBotHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(addBotHandler)
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 	require.Equal(t, http.StatusCreated, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusCreated))
 
@@ -120,8 +142,7 @@ func TestRouting_deleteBotHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(deleteBotHandler)
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
@@ -134,8 +155,7 @@ func TestRouting_settingsHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(makeHandler(settingsHandler))
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
@@ -160,8 +180,7 @@ func TestRouting_saveHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(saveHandler)
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))
@@ -177,8 +196,7 @@ func TestRouting_activityHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(activityHandler)
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code,
 		fmt.Sprintf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK))

@@ -6,8 +6,8 @@ import "time"
 type Connection struct {
 	ID        int    `gorm:"primary_key"`
 	ClientID  string `gorm:"client_id type:varchar(70);not null;unique" json:"clientId,omitempty"`
-	APIKEY    string `gorm:"api_key type:varchar(100);not null" json:"api_key,omitempty"`
-	APIURL    string `gorm:"api_url type:varchar(255);not null" json:"api_url,omitempty"`
+	APIKEY    string `gorm:"api_key type:varchar(100);not null" json:"api_key,omitempty" binding:"required"`
+	APIURL    string `gorm:"api_url type:varchar(255);not null" json:"api_url,omitempty" binding:"required,validatecrmurl"`
 	MGURL     string `gorm:"mg_url type:varchar(255);not null;" json:"mg_url,omitempty"`
 	MGToken   string `gorm:"mg_token type:varchar(100);not null;unique" json:"mg_token,omitempty"`
 	CreatedAt time.Time

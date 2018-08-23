@@ -3,7 +3,6 @@ package main
 import (
 	"time"
 
-	"github.com/getsentry/raven-go"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -17,7 +16,6 @@ type Orm struct {
 func NewDb(config *TransportConfig) *Orm {
 	db, err := gorm.Open("postgres", config.Database.Connection)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 

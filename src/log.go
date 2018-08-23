@@ -11,7 +11,7 @@ var logFormat = logging.MustStringFormatter(
 )
 
 func newLogger() *logging.Logger {
-	logger := logging.MustGetLogger(transport)
+	logger := logging.MustGetLogger(config.TransportInfo.Code)
 	logBackend := logging.NewLogBackend(os.Stdout, "", 0)
 	formatBackend := logging.NewBackendFormatter(logBackend, logFormat)
 	backend1Leveled := logging.AddModuleLevel(logBackend)

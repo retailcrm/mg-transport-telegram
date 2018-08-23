@@ -3,8 +3,12 @@ $('#save-crm').on("submit", function(e) {
     send(
         $(this).attr('action'),
         formDataToObj($(this).serializeArray()),
-        function () {
-            return 0;
+        function (data) {
+            sessionStorage.setItem("createdMsg", data.message);
+
+            document.location.replace(
+                location.protocol.concat("//").concat(window.location.host) + data.url
+            );
         }
     )
 });
@@ -15,7 +19,7 @@ $("#save").on("submit", function(e) {
         $(this).attr('action'),
         formDataToObj($(this).serializeArray()),
         function (data) {
-            M.toast({html: data});
+            M.toast({html: data.message});
         }
     )
 });
@@ -62,31 +66,22 @@ function send(url, data, callback) {
         type: "POST",
         success: callback,
         error: function (res){
-            if (res.status < 400) {
-                if (res.responseText) {
-                    let resObj = JSON.parse(res.responseText);
-                    sessionStorage.setItem("createdMsg", resObj.Message);
-
-                    document.location.replace(
-                        location.protocol.concat("//").concat(window.location.host) + resObj.Url
-                    );
-                }
-            } else {
-                M.toast({html: res.responseText})
+            if (res.status >= 400) {
+                M.toast({html: res.responseJSON.error})
             }
         }
     });
 }
 
 function getBotTemplate(data) {
-    let bot = JSON.parse(data);
+    // let bot = JSON.parse(data);
     tmpl =
         `<tr>
-            <td>${bot.name}</td>
-            <td>${bot.token}</td>
+            <td>${data.name}</td>
+            <td>${data.token}</td>
             <td>
                 <button class="delete-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
-                        data-token="${bot.token}">
+                        data-token="${data.token}">
                     <i class="material-icons">delete</i>
                 </button>
             </td>

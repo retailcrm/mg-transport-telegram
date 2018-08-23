@@ -5,6 +5,11 @@ http_server:
   host: ~
   listen: :3002
 
+transport_info:
+  name: Telegram
+  code: mg-telegram
+  logo_path: /static/telegram_logo.svg
+
 sentry_dsn: ~
 
 log_level: 5
@@ -20,3 +25,7 @@ config_aws:
     bucket: ~
     folder_name: ~
     content_type: image/jpeg
+
+credentials:
+  - "/api/integration-modules/{code}"
+  - "/api/integration-modules/{code}/edit"
