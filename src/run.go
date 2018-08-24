@@ -85,7 +85,7 @@ func setup() *gin.Engine {
 	r.Use(ErrorHandler(errorHandlers...))
 
 	r.GET("/", checkAccountForRequest(), connectHandler)
-	r.GET("/settings/:uid", settingsHandler)
+	r.Any("/settings/:uid", settingsHandler)
 	r.POST("/save/", checkConnectionForRequest(), saveHandler)
 	r.POST("/create/", checkConnectionForRequest(), createHandler)
 	r.POST("/add-bot/", checkBotForRequest(), addBotHandler)
