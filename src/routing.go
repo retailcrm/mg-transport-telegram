@@ -15,10 +15,12 @@ import (
 func connectHandler(c *gin.Context) {
 	res := struct {
 		Conn   Connection
-		Locale map[string]string
+		Locale map[string]interface{}
+		Year   int
 	}{
 		c.MustGet("account").(Connection),
 		getLocale(),
+		time.Now().Year(),
 	}
 
 	c.HTML(http.StatusOK, "home", &res)
@@ -133,11 +135,13 @@ func settingsHandler(c *gin.Context) {
 	res := struct {
 		Conn   *Connection
 		Bots   Bots
-		Locale map[string]string
+		Locale map[string]interface{}
+		Year   int
 	}{
 		p,
 		bots,
 		getLocale(),
+		time.Now().Year(),
 	}
 
 	c.HTML(http.StatusOK, "form", &res)

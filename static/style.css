@@ -1,3 +1,13 @@
+body {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
 .indent-top {
     margin-top: 2%;
 }
@@ -11,7 +21,9 @@
     margin: 0 auto 23px;
 }
 
-.tab-el-center{
+.docs,
+.tab-el-center,
+.footer-copyright{
     width: 67%;
     margin: 0 auto;
 }
@@ -101,4 +113,18 @@
     height: 2px;
     background-color: #039be5;
     will-change: left, right;
+}
+
+.docs p {
+    text-align: center;
+    color: #9e9e9e;
+}
+
+.footer-copyright {
+    border-top: 1px solid #9e9e9e;
+    margin-top: 10px;
+}
+
+.footer-copyright p {
+    color: #9e9e9e;
 }
