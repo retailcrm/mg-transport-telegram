@@ -1,4 +1,4 @@
-FROM golang:1.9.3-stretch
+FROM golang:1.11-stretch
 
 WORKDIR /
 ADD ./bin/transport /
