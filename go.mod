@@ -31,6 +31,7 @@ require (
 	github.com/jinzhu/now v0.0.0-20180511015916-ed742868f2ae // indirect
 	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
 	github.com/json-iterator/go v0.0.0-20180806060727-1624edc4454b // indirect
+	github.com/jstemmer/go-junit-report v0.0.0-20180614143834-385fac0ced9a // indirect
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.0.0 // indirect

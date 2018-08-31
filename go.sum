@@ -64,6 +64,8 @@ github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af h1:pmfjZENx5i
 github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/json-iterator/go v0.0.0-20180806060727-1624edc4454b h1:X61dhFTE1Au92SvyF8HyAwdjWqiSdfBgFR7wTxC0+uU=
 github.com/json-iterator/go v0.0.0-20180806060727-1624edc4454b/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
+github.com/jstemmer/go-junit-report v0.0.0-20180614143834-385fac0ced9a h1:2qq552JOlVHGYvqPc9ynBnGPDHeA7p0/QRn2NkrO8vk=
+github.com/jstemmer/go-junit-report v0.0.0-20180614143834-385fac0ced9a/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jtolds/gls v4.2.1+incompatible h1:fSuqC+Gmlu6l/ZYAoZzx2pyucC8Xza35fpRVWLVmUEE=
 github.com/jtolds/gls v4.2.1+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
