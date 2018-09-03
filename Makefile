@@ -22,7 +22,7 @@ test: deps fmt
 jenkins_test: deps
 	@echo "==> Running tests (result in test-report.xml)"
 	@go get -v -u github.com/jstemmer/go-junit-report
-	@go test ./... -v -cpu 2 -race | go-junit-report@v0.0.0-20180614143834-385fac0ced9a -set-exit-code > ./test-report.xml
+	@go test ./... -v -cpu 2 -race | /go/bin/go-junit-report -set-exit-code > ./test-report.xml
 
 fmt:
 	@echo "==> Running gofmt"

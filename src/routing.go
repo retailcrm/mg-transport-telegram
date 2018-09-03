@@ -201,8 +201,8 @@ func createHandler(c *gin.Context) {
 		return
 	}
 
-	conn.MGURL = data.Info["baseUrl"]
-	conn.MGToken = data.Info["token"]
+	conn.MGURL = data.Info.MgTransportInfo.EndpointUrl
+	conn.MGToken = data.Info.MgTransportInfo.Token
 	conn.Active = true
 
 	err = conn.createConnection()
