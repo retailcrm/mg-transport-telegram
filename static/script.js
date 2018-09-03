@@ -44,19 +44,41 @@ $("#add-bot").on("submit", function(e) {
 });
 
 $(document).on("click", ".delete-bot", function(e) {
-    let but = $(this);
-    send("/delete-bot/",
-        {
-            token: but.attr("data-token"),
-            connectionId: parseInt($('input[name=connectionId]').val()),
-        },
-        function () {
-            but.parents("tr").remove();
-            if ($("#bots tbody tr").length === 0) {
-                $("#bots").addClass("hide");
-            }
+    e.preventDefault();
+    var but = $(this);
+    var confirmText = JSON.parse(sessionStorage.getItem("confirmText"));
+
+    $.confirm({
+        title: false,
+        content: confirmText["text"],
+        useBootstrap: false,
+        boxWidth: '30%',
+        type: 'blue',
+        backgroundDismiss: false,
+        backgroundDismissAnimation: 'shake',
+        buttons: {
+            confirm: {
+                text: confirmText["confirm"],
+                action: function () {
+                    send("/delete-bot/",
+                        {
+                            token: but.attr("data-token"),
+                            connectionId: parseInt($('input[name=connectionId]').val()),
+                        },
+                        function () {
+                            but.parents("tr").remove();
+                            if ($("#bots tbody tr").length === 0) {
+                                $("#bots").addClass("hide");
+                            }
+                        }
+                    )
+                },
+            },
+            cancel: {
+                text: confirmText["cancel"],
+            },
         }
-    )
+    });
 });
 
 function send(url, data, callback) {
@@ -101,6 +123,29 @@ $( document ).ready(function() {
     M.Tabs.init(document.getElementById("tab"));
     if ($("table tbody").children().length === 0) {
         $("#bots").addClass("hide");
+    }
+
+    if (!sessionStorage.getItem("confirmText")) {
+        let confirmText = {};
+
+        switch (navigator.language.split('-')[0]) {
+            case "ru":
+                confirmText["text"] = "Вы уверены, что хотите удалить?";
+                confirmText["confirm"] = "да";
+                confirmText["cancel"] = "нет";
+                break;
+            case "es":
+                confirmText["text"] = "¿Estás seguro que quieres borrar?";
+                confirmText["confirm"] = "sí";
+                confirmText["cancel"] = "no";
+                break;
+            default:
+                confirmText["text"] = "Are you sure you want to delete?";
+                confirmText["confirm"] = "yes";
+                confirmText["cancel"] = "no";
+        }
+
+        sessionStorage.setItem("confirmText", JSON.stringify(confirmText));
     }
 
     let createdMsg = sessionStorage.getItem("createdMsg");

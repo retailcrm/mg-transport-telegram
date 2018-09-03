@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"io/ioutil"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -40,8 +41,8 @@ func getLocalizedMessage(messageID string) string {
 	return localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: messageID})
 }
 
-func getLocale() map[string]string {
-	return map[string]string{
+func getLocale() map[string]interface{} {
+	return map[string]interface{}{
 		"ButtonSave":  getLocalizedMessage("button_save"),
 		"ApiKey":      getLocalizedMessage("api_key"),
 		"TabSettings": getLocalizedMessage("tab_settings"),
@@ -51,5 +52,8 @@ func getLocale() map[string]string {
 		"AddBot":      getLocalizedMessage("add_bot"),
 		"TableDelete": getLocalizedMessage("table_delete"),
 		"Title":       getLocalizedMessage("title"),
+		"InfoBot":     template.HTML(getLocalizedMessage("info_bot")),
+		"CRMLink":     template.HTML(getLocalizedMessage("crm_link")),
+		"DocLink":     template.HTML(getLocalizedMessage("doc_link")),
 	}
 }

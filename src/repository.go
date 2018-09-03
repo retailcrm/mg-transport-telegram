@@ -29,6 +29,10 @@ func (c *Connection) createConnection() error {
 }
 
 func (c *Connection) saveConnection() error {
+	return orm.DB.Save(c).Error
+}
+
+func (c *Connection) saveConnectionByClientID() error {
 	return orm.DB.Model(c).Where("client_id = ?", c.ClientID).Update(c).Error
 }
 

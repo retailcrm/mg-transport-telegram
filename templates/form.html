@@ -32,6 +32,9 @@
             </div>
         </div>
         <div id="tab2" class="col s12">
+            <div class="docs">
+                <p>{{.Locale.InfoBot}}</p>
+            </div>
             <div class="row indent-top">
                 <form id="add-bot" class="tab-el-center" action="/add-bot/" method="POST">
                     <input name="connectionId" type="hidden" value="{{.Conn.ID}}">

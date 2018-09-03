@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -15,10 +16,12 @@ import (
 func connectHandler(c *gin.Context) {
 	res := struct {
 		Conn   Connection
-		Locale map[string]string
+		Locale map[string]interface{}
+		Year   int
 	}{
 		c.MustGet("account").(Connection),
 		getLocale(),
+		time.Now().Year(),
 	}
 
 	c.HTML(http.StatusOK, "home", &res)
@@ -133,11 +136,13 @@ func settingsHandler(c *gin.Context) {
 	res := struct {
 		Conn   *Connection
 		Bots   Bots
-		Locale map[string]string
+		Locale map[string]interface{}
+		Year   int
 	}{
 		p,
 		bots,
 		getLocale(),
+		time.Now().Year(),
 	}
 
 	c.HTML(http.StatusOK, "form", &res)
@@ -155,7 +160,7 @@ func saveHandler(c *gin.Context) {
 		return
 	}
 
-	err = conn.saveConnection()
+	err = conn.saveConnectionByClientID()
 	if err != nil {
 		c.Error(err)
 		return
@@ -196,8 +201,8 @@ func createHandler(c *gin.Context) {
 		return
 	}
 
-	conn.MGURL = data.Info["baseUrl"]
-	conn.MGToken = data.Info["token"]
+	conn.MGURL = data.Info.MgTransportInfo.EndpointUrl
+	conn.MGToken = data.Info.MgTransportInfo.Token
 	conn.Active = true
 
 	err = conn.createConnection()
@@ -216,14 +221,13 @@ func createHandler(c *gin.Context) {
 }
 
 func activityHandler(c *gin.Context) {
-	var rec v5.ActivityCallback
+	var (
+		activity  v5.Activity
+		systemUrl = c.PostForm("systemUrl")
+		clientId  = c.PostForm("clientId")
+	)
 
-	if err := c.ShouldBindJSON(&rec); err != nil {
-		c.Error(err)
-		return
-	}
-
-	conn := getConnection(rec.ClientId)
+	conn := getConnection(clientId)
 	if conn.ID == 0 {
 		c.AbortWithStatusJSON(http.StatusBadRequest,
 			gin.H{
@@ -234,9 +238,24 @@ func activityHandler(c *gin.Context) {
 		return
 	}
 
-	conn.Active = rec.Activity.Active && !rec.Activity.Freeze
+	err := json.Unmarshal([]byte(c.PostForm("activity")), &activity)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest,
+			gin.H{
+				"success": false,
+				"error":   "Wrong data",
+			},
+		)
+		return
+	}
 
-	if err := conn.setConnectionActivity(); err != nil {
+	conn.Active = activity.Active && !activity.Freeze
+
+	if systemUrl != "" {
+		conn.APIURL = systemUrl
+	}
+
+	if err := conn.saveConnection(); err != nil {
 		c.Error(err)
 		return
 	}

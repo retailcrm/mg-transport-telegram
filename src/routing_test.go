@@ -187,13 +187,16 @@ func TestRouting_saveHandler(t *testing.T) {
 }
 
 func TestRouting_activityHandler(t *testing.T) {
-	req, err := http.NewRequest("POST", "/actions/activity",
-		strings.NewReader(
-			`{"clientId": "123123","activity": {"active": true}}`,
-		))
+	data := url.Values{}
+	data.Set("clientId", "123123")
+	data.Set("activity", `{"active": true, "freeze": false}`)
+
+	req, err := http.NewRequest("POST", "/actions/activity", strings.NewReader(data.Encode()))
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
