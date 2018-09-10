@@ -28,9 +28,9 @@ error_adding_bot: Error al añadir el bot
 error_save: Error al guardar, contacte con el soporte técnico
 missing_credentials: "Métodos requeridos: {{.Credenciales}}"
 error_activity_mg: Revisar si la integración con MessageGateway está habilitada en Ajustes de retailCRM
-info_bot: "Si tiene dificultades para conectar el bot, por favor, consulte la <a target='_blank' href='//www.retailcrm.es/docs/Users/Telegram'>documentación</a>"
-crm_link: "<a href='//www.retailcrm.es' title='retailCRM'>retailCRM</a>"
-doc_link: "<a href='https://www.retailcrm.es/docs' target='_blank'>documentación</a>"
+info_bot: "Si tiene dificultades para conectar el bot, por favor, consulte la <a target='_blank' href='//www.retailcrm.pro/docs/Users/Telegram'>documentación</a>"
+crm_link: "<a href='//www.retailcrm.pro' title='retailCRM'>retailCRM</a>"
+doc_link: "<a href='//www.retailcrm.pro/docs' target='_blank'>documentación</a>"
 
 sticker: "[etiqueta]"
 audio: "[archivo de audio]"

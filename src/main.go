@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"regexp"
 
 	"github.com/jessevdk/go-flags"
 
@@ -20,6 +21,7 @@ var (
 	options      Options
 	parser       = flags.NewParser(&options, flags.Default)
 	tokenCounter uint32
+	rx = regexp.MustCompile(`/+$`)
 )
 
 func main() {

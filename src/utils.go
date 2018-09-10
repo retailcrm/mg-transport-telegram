@@ -17,6 +17,13 @@ import (
 	"github.com/retailcrm/api-client-go/v5"
 )
 
+var (
+	credentialsTransport = []string{
+		"/api/integration-modules/{code}",
+		"/api/integration-modules/{code}/edit",
+	}
+)
+
 // GenerateToken function
 func GenerateToken() string {
 	c := atomic.AddUint32(&tokenCounter, 1)
@@ -55,8 +62,8 @@ func getAPIClient(url, key string) (*v5.Client, error, int) {
 }
 
 func checkCredentials(credential []string) []string {
-	rc := make([]string, len(config.Credentials))
-	copy(rc, config.Credentials)
+	rc := make([]string, len(credentialsTransport))
+	copy(rc, credentialsTransport)
 
 	for _, vc := range credential {
 		for kn, vn := range rc {
