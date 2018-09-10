@@ -30,7 +30,7 @@ missing_credentials: "Required methods: {{.Credentials}}"
 error_activity_mg: Check if the integration with MessageGateway is enabled in retailCRM settings
 info_bot: "If you have a problem with connecting a bot, please, refer to the <a target='_blank' href='//www.retailcrm.pro/docs/Users/Telegram'>documentation</a>"
 crm_link: "<a href='//www.retailcrm.pro' title='retailCRM'>retailCRM</a>"
-doc_link: "<a href='https://www.retailcrm.pro/docs' target='_blank'>документация</a>"
+doc_link: "<a href='//www.retailcrm.pro/docs' target='_blank'>documentation</a>"
 
 sticker: "[sticker]"
 audio: "[audio file]"

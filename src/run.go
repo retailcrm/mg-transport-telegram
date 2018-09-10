@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"os/signal"
-	"regexp"
 	"syscall"
 
 	"github.com/getsentry/raven-go"
@@ -106,7 +105,6 @@ func createHTMLRender() multitemplate.Renderer {
 
 func checkAccountForRequest() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		rx := regexp.MustCompile(`/+$`)
 		ra := rx.ReplaceAllString(c.Query("account"), ``)
 		p := Connection{
 			APIURL: ra,
@@ -143,6 +141,7 @@ func checkConnectionForRequest() gin.HandlerFunc {
 			return
 		}
 
+		conn.APIURL = rx.ReplaceAllString(conn.APIURL, ``)
 		c.Set("connection", conn)
 	}
 }
