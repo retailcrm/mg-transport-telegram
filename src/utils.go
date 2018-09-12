@@ -18,6 +18,7 @@ import (
 )
 
 var (
+	tokenCounter uint32
 	credentialsTransport = []string{
 		"/api/integration-modules/{code}",
 		"/api/integration-modules/{code}/edit",
