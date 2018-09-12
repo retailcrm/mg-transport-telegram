@@ -20,8 +20,7 @@ var (
 	logger       *logging.Logger
 	options      Options
 	parser       = flags.NewParser(&options, flags.Default)
-	tokenCounter uint32
-	rx = regexp.MustCompile(`/+$`)
+	rx           = regexp.MustCompile(`/+$`)
 )
 
 func main() {
