@@ -380,13 +380,10 @@ func telegramWebhookHandler(c *gin.Context) {
 		}
 
 		snd := v1.SendData{
-			Message: v1.SendMessage{
-				Message: v1.Message{
-					ExternalID: strconv.Itoa(update.Message.MessageID),
-					Type:       "text",
-					Text:       update.Message.Text,
-				},
-				SentAt: time.Now(),
+			Message: v1.Message{
+				ExternalID: strconv.Itoa(update.Message.MessageID),
+				Type:       "text",
+				Text:       update.Message.Text,
 			},
 			User: v1.User{
 				ExternalID: strconv.Itoa(update.Message.From.ID),
