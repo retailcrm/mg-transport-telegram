@@ -507,6 +507,7 @@ func mgWebhookHandler(c *gin.Context) {
 				)
 			}
 
+<<<<<<< 01b5fb405bad7411afb6523c9308deaf25e20f6f
 			if msg.Data.Product.Url != "" {
 				mb += msg.Data.Product.Url
 			} else {
@@ -530,12 +531,43 @@ func mgWebhookHandler(c *gin.Context) {
 				}
 			}
 
+=======
+			if msg.Data.Product.Img != "" {
+				mb = fmt.Sprintf("\n%s", msg.Data.Product.Img)
+			}
+
+		} else if msg.Data.Type == v1.MsgTypeOrder {
+			mb = "**Заказ"
+
+			if msg.Data.Order.Number != ""{
+				mb += " " + msg.Data.Order.Number
+			}
+
+			if msg.Data.Order.Date != "" {
+				mb += fmt.Sprintf(" (%s)", msg.Data.Order.Date)
+			}
+
+			mb += "**\n"
+			if len(msg.Data.Order.Items) > 0 {
+				for  _, v := range msg.Data.Order.Items {
+					mb += fmt.Sprintf("%s %v x %v %s\n",  v.Name, v.Quantity.Value, v.Price.Value, currency[strings.ToLower(v.Price.Currency)])
+				}
+			}
+
+>>>>>>> orders & products
 			mb += fmt.Sprintf("Сумма: %v %s", msg.Data.Order.Cost.Value, currency[strings.ToLower(msg.Data.Order.Cost.Currency)])
 		} else {
 			mb = msg.Data.Content
 		}
 
 		m := tgbotapi.NewMessage(cid, mb)
+<<<<<<< 01b5fb405bad7411afb6523c9308deaf25e20f6f
+=======
+		if msg.Data.Type == v1.MsgTypeProduct || msg.Data.Type == v1.MsgTypeOrder {
+			m.ParseMode = "Markdown"
+		}
+
+>>>>>>> orders & products
 		if msg.Data.QuoteExternalID != "" {
 			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
 			if err != nil {
