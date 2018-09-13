@@ -77,6 +77,10 @@ func addBotHandler(c *gin.Context) {
 				Creating: v1.ChannelFeatureReceive,
 				Editing:  v1.ChannelFeatureReceive,
 			},
+			Order: v1.Order{
+				Creating: v1.ChannelFeatureReceive,
+				Editing:  v1.ChannelFeatureReceive,
+			},
 		},
 	}
 
@@ -506,16 +510,35 @@ func mgWebhookHandler(c *gin.Context) {
 				)
 			}
 
-			if msg.Data.Product.Img != ""  {
+			if msg.Data.Product.Img != "" {
 				mb = fmt.Sprintf("\n%s", msg.Data.Product.Img)
 			}
 
+		} else if msg.Data.Type == v1.MsgTypeOrder {
+			mb = "**Заказ"
+
+			if msg.Data.Order.Number != "" {
+				mb += " " + msg.Data.Order.Number
+			}
+
+			if msg.Data.Order.Date != "" {
+				mb += fmt.Sprintf(" (%s)", msg.Data.Order.Date)
+			}
+
+			mb += "**\n"
+			if len(msg.Data.Order.Items) > 0 {
+				for _, v := range msg.Data.Order.Items {
+					mb += fmt.Sprintf("%s %v x %v %s\n", v.Name, v.Quantity.Value, v.Price.Value, currency[strings.ToLower(v.Price.Currency)])
+				}
+			}
+
+			mb += fmt.Sprintf("Сумма: %v %s", msg.Data.Order.Cost.Value, currency[strings.ToLower(msg.Data.Order.Cost.Currency)])
 		} else {
 			mb = msg.Data.Content
 		}
 
 		m := tgbotapi.NewMessage(cid, mb)
-		if msg.Data.Type == v1.MsgTypeProduct {
+		if msg.Data.Type == v1.MsgTypeProduct || msg.Data.Type == v1.MsgTypeOrder {
 			m.ParseMode = "Markdown"
 		}
 
