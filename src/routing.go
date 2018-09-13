@@ -497,23 +497,21 @@ func mgWebhookHandler(c *gin.Context) {
 	case "message_sent":
 		var mb string
 		if msg.Data.Type == v1.MsgTypeProduct {
-			mb = fmt.Sprintf(
-				"[%s](%s)",
-				msg.Data.Product.Name,
-				msg.Data.Product.Url,
-			)
+			mb = fmt.Sprintf("%s\n", msg.Data.Product.Name)
+
 			if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
 				mb += fmt.Sprintf(
-					"\n%v %s",
+					"\n%v %s\n",
 					msg.Data.Product.Cost.Value,
 					currency[strings.ToLower(msg.Data.Product.Cost.Currency)],
 				)
 			}
 
-			if msg.Data.Product.Img != "" {
-				mb = fmt.Sprintf("\n%s", msg.Data.Product.Img)
+			if msg.Data.Product.Url != "" {
+				mb += msg.Data.Product.Url
+			} else {
+				mb += msg.Data.Product.Img
 			}
-
 		} else if msg.Data.Type == v1.MsgTypeOrder {
 			mb = "**Заказ"
 
