@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -71,6 +72,10 @@ func addBotHandler(c *gin.Context) {
 				Editing:  v1.ChannelFeatureBoth,
 				Quoting:  v1.ChannelFeatureBoth,
 				Deleting: v1.ChannelFeatureReceive,
+			},
+			Product: v1.Product{
+				Creating: v1.ChannelFeatureReceive,
+				Editing:  v1.ChannelFeatureReceive,
 			},
 		},
 	}
@@ -484,8 +489,35 @@ func mgWebhookHandler(c *gin.Context) {
 		return
 	}
 
-	if msg.Type == "message_sent" {
-		m := tgbotapi.NewMessage(cid, msg.Data.Content)
+	switch msg.Type {
+	case "message_sent":
+		var mb string
+		if msg.Data.Type == v1.MsgTypeProduct {
+			mb = fmt.Sprintf(
+				"[%s](%s)",
+				msg.Data.Product.Name,
+				msg.Data.Product.Url,
+			)
+			if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
+				mb += fmt.Sprintf(
+					"\n%v %s",
+					msg.Data.Product.Cost.Value,
+					currency[strings.ToLower(msg.Data.Product.Cost.Currency)],
+				)
+			}
+
+			if msg.Data.Product.Img != ""  {
+				mb = fmt.Sprintf("\n%s", msg.Data.Product.Img)
+			}
+
+		} else {
+			mb = msg.Data.Content
+		}
+
+		m := tgbotapi.NewMessage(cid, mb)
+		if msg.Data.Type == v1.MsgTypeProduct {
+			m.ParseMode = "Markdown"
+		}
 
 		if msg.Data.QuoteExternalID != "" {
 			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
@@ -508,9 +540,8 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"external_message_id": strconv.Itoa(msgSend.MessageID)})
-	}
 
-	if msg.Type == "message_updated" {
+	case "message_updated":
 		msgSend, err := bot.Send(tgbotapi.NewEditMessageText(cid, uid, msg.Data.Content))
 		if err != nil {
 			logger.Error(err)
@@ -523,9 +554,8 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		c.AbortWithStatus(http.StatusOK)
-	}
 
-	if msg.Type == "message_deleted" {
+	case "message_deleted":
 		msgSend, err := bot.Send(tgbotapi.NewDeleteMessage(cid, uid))
 		if err != nil {
 			logger.Error(err)
@@ -538,5 +568,6 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{})
+
 	}
 }
