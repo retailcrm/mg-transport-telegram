@@ -70,6 +70,14 @@ func TestRouting_addBotHandler(t *testing.T) {
 				Quoting:  v1.ChannelFeatureBoth,
 				Deleting: v1.ChannelFeatureReceive,
 			},
+			Product: v1.Product{
+				Creating: v1.ChannelFeatureReceive,
+				Editing:  v1.ChannelFeatureReceive,
+			},
+			Order: v1.Order{
+				Creating: v1.ChannelFeatureReceive,
+				Editing:  v1.ChannelFeatureReceive,
+			},
 		},
 	}
 

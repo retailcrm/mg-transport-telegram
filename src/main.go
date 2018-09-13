@@ -15,12 +15,12 @@ type Options struct {
 }
 
 var (
-	config  *TransportConfig
-	orm     *Orm
-	logger  *logging.Logger
-	options Options
-	parser  = flags.NewParser(&options, flags.Default)
-	rx      = regexp.MustCompile(`/+$`)
+	config   *TransportConfig
+	orm      *Orm
+	logger   *logging.Logger
+	options  Options
+	parser   = flags.NewParser(&options, flags.Default)
+	rx       = regexp.MustCompile(`/+$`)
 	currency = map[string]string{
 		"rub": "₽",
 		"uah": "₴",
