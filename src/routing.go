@@ -510,14 +510,14 @@ func mgWebhookHandler(c *gin.Context) {
 				)
 			}
 
-			if msg.Data.Product.Img != ""  {
+			if msg.Data.Product.Img != "" {
 				mb = fmt.Sprintf("\n%s", msg.Data.Product.Img)
 			}
 
 		} else if msg.Data.Type == v1.MsgTypeOrder {
 			mb = "**Заказ"
 
-			if msg.Data.Order.Number != ""{
+			if msg.Data.Order.Number != "" {
 				mb += " " + msg.Data.Order.Number
 			}
 
@@ -527,8 +527,8 @@ func mgWebhookHandler(c *gin.Context) {
 
 			mb += "**\n"
 			if len(msg.Data.Order.Items) > 0 {
-				for  _, v := range msg.Data.Order.Items {
-					mb += fmt.Sprintf("%s %v x %v %s\n",  v.Name, v.Quantity.Value, v.Price.Value, currency[strings.ToLower(v.Price.Currency)])
+				for _, v := range msg.Data.Order.Items {
+					mb += fmt.Sprintf("%s %v x %v %s\n", v.Name, v.Quantity.Value, v.Price.Value, currency[strings.ToLower(v.Price.Currency)])
 				}
 			}
 
