@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -15,7 +13,6 @@ import (
 	"github.com/h2non/gock"
 	"github.com/retailcrm/mg-transport-api-client-go/v1"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var router *gin.Engine
