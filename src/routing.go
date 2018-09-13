@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"net/http"
 	"strconv"
 	"time"
@@ -487,7 +486,26 @@ func mgWebhookHandler(c *gin.Context) {
 
 	switch msg.Type {
 	case "message_sent":
-		m := tgbotapi.NewMessage(cid, msg.Data.Content)
+		var mb string
+		if msg.Data.Type == v1.MsgTypeProduct {
+			mb = msg.Data.Product.Name
+			if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
+				mb += fmt.Sprintf(
+					"\n%v %s",
+					msg.Data.Product.Cost.Value,
+					msg.Data.Product.Cost.Currency,
+				)
+			}
+
+			if msg.Data.Product.Img != ""  {
+				mb = fmt.Sprintf("\n%s", msg.Data.Product.Img)
+			}
+
+		} else {
+			mb = msg.Data.Content
+		}
+
+		m := tgbotapi.NewMessage(cid, mb)
 
 		if msg.Data.QuoteExternalID != "" {
 			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
@@ -538,41 +556,6 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{})
-	case "product":
-		mb := msg.Data.Product.Url
-		mb += "\n" + msg.Data.Product.Name
 
-		if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
-			mb += "\n" + localizer.MustLocalize(&i18n.LocalizeConfig{
-				MessageID: "missing_credentials",
-				TemplateData: map[string]interface{}{
-					"Value":    msg.Data.Product.Cost.Value,
-					"Currency": msg.Data.Product.Cost.Currency,
-				},
-			})
-		}
-		m := tgbotapi.NewMessage(cid, msg.Data.Content)
-
-		if msg.Data.QuoteExternalID != "" {
-			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
-			if err != nil {
-				c.Error(err)
-				return
-			}
-			m.ReplyToMessageID = qid
-		}
-
-		msgSend, err := bot.Send(m)
-		if err != nil {
-			logger.Error(err)
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
-
-		if config.Debug {
-			logger.Debugf("mgWebhookHandler sent %v", msgSend)
-		}
-
-		c.JSON(http.StatusOK, gin.H{"external_message_id": strconv.Itoa(msgSend.MessageID)})
 	}
 }

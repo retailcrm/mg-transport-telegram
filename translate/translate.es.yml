@@ -41,5 +41,3 @@ video: "[video]"
 voice: "[mensaje de voz]"
 photo: "[foto]"
 other: "[formato indefinido de mensaje]"
-
-cost: "Costo: {{.Value}} {{.Currency}}"
