@@ -513,7 +513,7 @@ func mgWebhookHandler(c *gin.Context) {
 				mb += msg.Data.Product.Img
 			}
 		} else if msg.Data.Type == v1.MsgTypeOrder {
-			mb = "**Заказ"
+			mb = "Заказ"
 
 			if msg.Data.Order.Number != "" {
 				mb += " " + msg.Data.Order.Number
@@ -523,7 +523,7 @@ func mgWebhookHandler(c *gin.Context) {
 				mb += fmt.Sprintf(" (%s)", msg.Data.Order.Date)
 			}
 
-			mb += "**\n"
+			mb += "\n"
 			if len(msg.Data.Order.Items) > 0 {
 				for _, v := range msg.Data.Order.Items {
 					mb += fmt.Sprintf("%s %v x %v %s\n", v.Name, v.Quantity.Value, v.Price.Value, currency[strings.ToLower(v.Price.Currency)])
@@ -536,10 +536,6 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		m := tgbotapi.NewMessage(cid, mb)
-		if msg.Data.Type == v1.MsgTypeProduct || msg.Data.Type == v1.MsgTypeOrder {
-			m.ParseMode = "Markdown"
-		}
-
 		if msg.Data.QuoteExternalID != "" {
 			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
 			if err != nil {
