@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -71,6 +72,10 @@ func addBotHandler(c *gin.Context) {
 				Editing:  v1.ChannelFeatureBoth,
 				Quoting:  v1.ChannelFeatureBoth,
 				Deleting: v1.ChannelFeatureReceive,
+			},
+			Product: v1.Product{
+				Creating: v1.ChannelFeatureReceive,
+				Editing:  v1.ChannelFeatureReceive,
 			},
 		},
 	}
@@ -488,12 +493,16 @@ func mgWebhookHandler(c *gin.Context) {
 	case "message_sent":
 		var mb string
 		if msg.Data.Type == v1.MsgTypeProduct {
-			mb = msg.Data.Product.Name
+			mb = fmt.Sprintf(
+				"[%s](%s)",
+				msg.Data.Product.Name,
+				msg.Data.Product.Url,
+			)
 			if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
 				mb += fmt.Sprintf(
 					"\n%v %s",
 					msg.Data.Product.Cost.Value,
-					msg.Data.Product.Cost.Currency,
+					currency[strings.ToLower(msg.Data.Product.Cost.Currency)],
 				)
 			}
 
@@ -506,6 +515,9 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		m := tgbotapi.NewMessage(cid, mb)
+		if msg.Data.Type == v1.MsgTypeProduct {
+			m.ParseMode = "Markdown"
+		}
 
 		if msg.Data.QuoteExternalID != "" {
 			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
