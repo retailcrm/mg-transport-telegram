@@ -17,7 +17,6 @@ pipeline {
             steps {
                 sh 'cp config_test.yml.dist config_test.yml'
                 compose 'up -d --build postgres_test'
-                compose 'run --rm mg_telegram_test make migrate_test'
             }
         }
 
