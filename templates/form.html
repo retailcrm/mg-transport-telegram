@@ -51,19 +51,31 @@
                         </div>
                     </div>
                 </form>
+                {{$LangCode := .LangCode}}
                 <table id="bots" class="tab-el-center">
                     <thead>
                         <tr>
                             <th>{{.Locale.TableName}}</th>
                             <th>{{.Locale.TableToken}}</th>
+                            <th>{{.Locale.Language}}</th>
                             <th class="text-left">{{.Locale.TableDelete}}</th>
                         </tr>
                     </thead>
                     <tbody>
                             {{range .Bots}}
+                            {{$lang := .Lang}}
                                 <tr>
                                     <td>{{.Name}}</td>
                                     <td>{{.Token}}</td>
+                                    <td>
+                                        <div class="col s3 sel-lang">
+                                            <select data-token="{{.Token}}">
+                                            {{range $key, $value := $LangCode}}
+                                                <option value="{{$value}}" {{if eq $value $lang}}selected{{end}}>{{$value}}</option>
+                                            {{end}}
+                                            </select>
+                                        </div>
+                                    </td>
                                     <td>
                                         <button class="delete-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
                                                 data-token="{{.Token}}">

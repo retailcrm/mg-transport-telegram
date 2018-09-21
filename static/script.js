@@ -1,3 +1,16 @@
+$(document).on("change", "select", function(e) {
+    send(
+        "/set-lang/",
+        {
+            token: $(this).attr("data-token"),
+            lang: $(this).find(":selected").text()
+        },
+        function () {
+            return 0;
+        }
+    )
+});
+
 $('#save-crm').on("submit", function(e) {
     e.preventDefault();
     send(
@@ -39,6 +52,7 @@ $("#add-bot").on("submit", function(e) {
             }
             $("#bots tbody").append(getBotTemplate(data));
             $("#token").val("");
+            $('select').formSelect();
         }
     )
 });
@@ -102,6 +116,15 @@ function getBotTemplate(data) {
             <td>${data.name}</td>
             <td>${data.token}</td>
             <td>
+                <div class="col s3 sel-lang">
+                    <select data-token="${data.token}">
+                        <option value="en" selected>en</option>
+                        <option value="ru">ru</option>
+                        <option value="es">es</option>
+                    </select>
+                </div>
+            </td>
+            <td>
                 <button class="delete-bot btn btn-small waves-effect waves-light light-blue darken-1" type="submit" name="action"
                         data-token="${data.token}">
                     <i class="material-icons">delete</i>
@@ -120,6 +143,7 @@ function formDataToObj(formArray) {
 }
 
 $( document ).ready(function() {
+    $('select').formSelect();
     M.Tabs.init(document.getElementById("tab"));
     if ($("table tbody").children().length === 0) {
         $("#bots").addClass("hide");

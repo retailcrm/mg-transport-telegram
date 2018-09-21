@@ -8,6 +8,7 @@ api_key: API Ключ
 add_bot: Добавить бота
 title: Модуль подключения Telegram к retailCRM
 successful: Данные успешно обновлены
+language: Язык
 
 no_bot_token: Введите токен
 wrong_data: Неверные данные
@@ -41,3 +42,10 @@ video: "[видео]"
 voice: "[голосовое сообщение]"
 photo: "[изображение]"
 undefined: "[неопределенный формат сообщения]"
+
+item_cost: "Цена"
+order: "Заказ"
+delivery: "Доставка"
+payment: "Оплата"
+order_total: "Сумма"
+cost_currency: "{{.Amount}} {{.Currency}}"
