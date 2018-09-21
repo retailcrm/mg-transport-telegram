@@ -13,6 +13,13 @@ func getConnection(uid string) *Connection {
 	return &connection
 }
 
+func getConnections() []*Connection {
+	var connection []*Connection
+	orm.DB.Find(&connection)
+
+	return connection
+}
+
 func getConnectionByURL(urlCrm string) *Connection {
 	var connection Connection
 	orm.DB.First(&connection, "api_url = ?", urlCrm)
@@ -50,6 +57,10 @@ func getBotByToken(token string) (*Bot, error) {
 	}
 
 	return &bot, nil
+}
+
+func (b *Bot) save() error {
+	return orm.DB.Save(b).Error
 }
 
 func (b *Bot) deleteBot() error {

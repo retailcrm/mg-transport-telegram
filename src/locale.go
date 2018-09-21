@@ -41,6 +41,13 @@ func getLocalizedMessage(messageID string) string {
 	return localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: messageID})
 }
 
+func getLocalizedTemplateMessage(messageID string, templateData map[string]interface{}) string {
+	return localizer.MustLocalize(&i18n.LocalizeConfig{
+		MessageID:    messageID,
+		TemplateData: templateData,
+	})
+}
+
 func getLocale() map[string]interface{} {
 	return map[string]interface{}{
 		"ButtonSave":  getLocalizedMessage("button_save"),
@@ -52,6 +59,7 @@ func getLocale() map[string]interface{} {
 		"AddBot":      getLocalizedMessage("add_bot"),
 		"TableDelete": getLocalizedMessage("table_delete"),
 		"Title":       getLocalizedMessage("title"),
+		"Language":    getLocalizedMessage("language"),
 		"InfoBot":     template.HTML(getLocalizedMessage("info_bot")),
 		"CRMLink":     template.HTML(getLocalizedMessage("crm_link")),
 		"DocLink":     template.HTML(getLocalizedMessage("doc_link")),
