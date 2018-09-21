@@ -90,6 +90,7 @@ func setup() *gin.Engine {
 	r.POST("/create/", checkConnectionForRequest(), createHandler)
 	r.POST("/add-bot/", checkBotForRequest(), addBotHandler)
 	r.POST("/delete-bot/", checkBotForRequest(), deleteBotHandler)
+	r.POST("/set-lang/", checkBotForRequest(), setLangBotHandler)
 	r.POST("/actions/activity", activityHandler)
 	r.POST("/telegram/:token", telegramWebhookHandler)
 	r.POST("/webhook/", mgWebhookHandler)

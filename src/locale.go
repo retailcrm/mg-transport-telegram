@@ -59,6 +59,7 @@ func getLocale() map[string]interface{} {
 		"AddBot":      getLocalizedMessage("add_bot"),
 		"TableDelete": getLocalizedMessage("table_delete"),
 		"Title":       getLocalizedMessage("title"),
+		"Language":    getLocalizedMessage("language"),
 		"InfoBot":     template.HTML(getLocalizedMessage("info_bot")),
 		"CRMLink":     template.HTML(getLocalizedMessage("crm_link")),
 		"DocLink":     template.HTML(getLocalizedMessage("doc_link")),

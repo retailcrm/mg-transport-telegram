@@ -24,6 +24,7 @@ type Bot struct {
 	ChannelSettingsHash string `gorm:"channel_settings_hash type:varchar(70)"`
 	Token               string `gorm:"token type:varchar(100);not null;unique" json:"token,omitempty"`
 	Name                string `gorm:"name type:varchar(40)" json:"name,omitempty"`
+	Lang                string `gorm:"lang type:varchar(2)" json:"lang,omitempty"`
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }

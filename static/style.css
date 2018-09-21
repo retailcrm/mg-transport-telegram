@@ -32,8 +32,17 @@ main {
     float: right;
 }
 
+#bots .select-wrapper input.select-dropdown,
 #bots {
     font-size: 12px;
+}
+
+#bots .sel-lang{
+    padding: 0;
+}
+
+#bots .select-wrapper ul li span{
+    color: #039be5;
 }
 
 #msg{

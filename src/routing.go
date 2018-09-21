@@ -117,15 +117,17 @@ func settingsHandler(c *gin.Context) {
 	bots := p.getBotsByClientID()
 
 	res := struct {
-		Conn   *Connection
-		Bots   Bots
-		Locale map[string]interface{}
-		Year   int
+		Conn     *Connection
+		Bots     Bots
+		Locale   map[string]interface{}
+		Year     int
+		LangCode []string
 	}{
 		p,
 		bots,
 		getLocale(),
 		time.Now().Year(),
+		[]string{"en", "ru", "es"},
 	}
 
 	c.HTML(http.StatusOK, "form", &res)
@@ -244,6 +246,25 @@ func activityHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func setLangBotHandler(c *gin.Context) {
+	b := c.MustGet("bot").(Bot)
+	cl, err := getBotByToken(b.Token)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	cl.Lang = b.Lang
+
+	err = cl.save()
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func getIntegrationModule(clientId string) v5.IntegrationModule {
@@ -559,6 +580,8 @@ func mgWebhookHandler(c *gin.Context) {
 		return
 	}
 
+	setLocale(b.Lang)
+
 	switch msg.Type {
 	case "message_sent":
 		var mb string
@@ -568,13 +591,13 @@ func mgWebhookHandler(c *gin.Context) {
 
 			if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
 				mb += fmt.Sprintf(
-					"\n%s: %s",
+					"\n%s: %s\n",
 					getLocalizedMessage("item_cost"),
 					getLocalizedTemplateMessage(
 						"cost_currency",
 						map[string]interface{}{
-							"CostValue":    msg.Data.Product.Cost.Value,
-							"CostCurrency": currency[strings.ToLower(msg.Data.Product.Cost.Currency)],
+							"Amount":   msg.Data.Product.Cost.Value,
+							"Currency": currency[strings.ToLower(msg.Data.Product.Cost.Currency)],
 						},
 					),
 				)

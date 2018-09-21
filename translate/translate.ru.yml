@@ -8,6 +8,7 @@ api_key: API Ключ
 add_bot: Добавить бота
 title: Модуль подключения Telegram к retailCRM
 successful: Данные успешно обновлены
+language: Язык
 
 no_bot_token: Введите токен
 wrong_data: Неверные данные
