@@ -14,6 +14,8 @@ type Options struct {
 	Config string `short:"c" long:"config" default:"config.yml" description:"Path to configuration file"`
 }
 
+const Type = "telegram"
+
 var (
 	config   *TransportConfig
 	orm      *Orm

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/sha1"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/retailcrm/api-client-go/v5"
 )
 
@@ -50,12 +51,14 @@ func getAPIClient(url, key string) (*v5.Client, error, int) {
 	if res := checkCredentials(cr.Credentials); len(res) != 0 {
 		logger.Error(url, status, res)
 		return nil,
-			errors.New(localizer.MustLocalize(&i18n.LocalizeConfig{
-				MessageID: "missing_credentials",
-				TemplateData: map[string]interface{}{
-					"Credentials": strings.Join(res, ", "),
-				},
-			})),
+			errors.New(
+				getLocalizedTemplateMessage(
+					"missing_credentials",
+					map[string]interface{}{
+						"Credentials": strings.Join(res, ", "),
+					},
+				),
+			),
 			http.StatusBadRequest
 	}
 
@@ -116,6 +119,16 @@ func UploadUserAvatar(url string) (picURLs3 string, err error) {
 	}
 
 	picURLs3 = result.Location
+
+	return
+}
+
+func getChannelSettingsHash() (hash string, err error) {
+	res, err := json.Marshal(getChannelSettings())
+
+	h := sha1.New()
+	h.Write(res)
+	hash = fmt.Sprintf("%x", h.Sum(nil))
 
 	return
 }
