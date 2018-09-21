@@ -683,34 +683,62 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 		mb += "\n"
 		for k, v := range dataOrder.Items {
 			mb += fmt.Sprintf(
-				"%d. %s %v x %s\n",
+				"%d. %s",
 				k+1,
 				v.Name,
-				v.Quantity.Value,
-				getLocalizedTemplateMessage(
-					"cost_currency",
-					map[string]interface{}{
-						"Amount":   v.Price.Value,
-						"Currency": currency[strings.ToLower(v.Price.Currency)],
-					},
-				),
 			)
+
+			if v.Quantity != nil {
+				if v.Quantity.Value != 0 {
+					mb += fmt.Sprintf(
+						" %v",
+						v.Quantity.Value,
+					)
+				}
+			}
+
+			if v.Price != nil {
+				if val, ok := currency[strings.ToLower(v.Price.Currency)]; ok {
+					mb += fmt.Sprintf(
+						" x %s\n",
+						getLocalizedTemplateMessage(
+							"cost_currency",
+							map[string]interface{}{
+								"Amount":   v.Price.Value,
+								"Currency": val,
+							},
+						),
+					)
+				}
+			} else {
+				mb += "\n"
+			}
 		}
 	}
 
 	if dataOrder.Delivery != nil {
-		mb += fmt.Sprintf(
-			"\n%s:\n%s; %s",
-			getLocalizedMessage("delivery"),
-			dataOrder.Delivery.Name,
-			getLocalizedTemplateMessage(
-				"cost_currency",
-				map[string]interface{}{
-					"Amount":   dataOrder.Delivery.Amount.Value,
-					"Currency": currency[strings.ToLower(dataOrder.Delivery.Amount.Currency)],
-				},
-			),
-		)
+		if dataOrder.Delivery.Name != "" {
+			mb += fmt.Sprintf(
+				"\n%s:\n%s",
+				getLocalizedMessage("delivery"),
+				dataOrder.Delivery.Name,
+			)
+		}
+
+		if dataOrder.Delivery.Amount != nil {
+			if val, ok := currency[strings.ToLower(dataOrder.Delivery.Amount.Currency)]; ok && dataOrder.Delivery.Amount.Value != 0 {
+				mb += fmt.Sprintf(
+					"; %s",
+					getLocalizedTemplateMessage(
+						"cost_currency",
+						map[string]interface{}{
+							"Amount":   dataOrder.Delivery.Amount.Value,
+							"Currency": val,
+						},
+					),
+				)
+			}
+		}
 
 		if dataOrder.Delivery.Address != "" {
 			mb += ";\n" + dataOrder.Delivery.Address
@@ -725,17 +753,22 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 			getLocalizedMessage("payment"),
 		)
 		for _, v := range dataOrder.Payments {
-			mb += fmt.Sprintf(
-				"%s; %s",
-				v.Name,
-				getLocalizedTemplateMessage(
-					"cost_currency",
-					map[string]interface{}{
-						"Amount":   v.Amount.Value,
-						"Currency": currency[strings.ToLower(v.Amount.Currency)],
-					},
-				),
-			)
+			mb += v.Name
+
+			if v.Amount != nil {
+				if val, ok := currency[strings.ToLower(v.Amount.Currency)]; ok && v.Amount.Value != 0 {
+					mb += fmt.Sprintf(
+						"; %s",
+						getLocalizedTemplateMessage(
+							"cost_currency",
+							map[string]interface{}{
+								"Amount":   v.Amount.Value,
+								"Currency": val,
+							},
+						),
+					)
+				}
+			}
 
 			if v.Status != nil && v.Status.Name != "" {
 				mb += fmt.Sprintf(
@@ -748,18 +781,20 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 		}
 	}
 
-	if dataOrder.Cost != nil && dataOrder.Cost.Value != 0 {
-		mb += fmt.Sprintf(
-			"\n%s: %s",
-			getLocalizedMessage("cost"),
-			getLocalizedTemplateMessage(
-				"cost_currency",
-				map[string]interface{}{
-					"Amount":   dataOrder.Cost.Value,
-					"Currency": currency[strings.ToLower(dataOrder.Cost.Currency)],
-				},
-			),
-		)
+	if dataOrder.Cost != nil {
+		if val, ok := currency[strings.ToLower(dataOrder.Cost.Currency)]; ok && dataOrder.Cost.Value != 0 {
+			mb += fmt.Sprintf(
+				"\n%s: %s",
+				getLocalizedMessage("order_total"),
+				getLocalizedTemplateMessage(
+					"cost_currency",
+					map[string]interface{}{
+						"Amount":   dataOrder.Cost.Value,
+						"Currency": val,
+					},
+				),
+			)
+		}
 	}
 
 	return mb
