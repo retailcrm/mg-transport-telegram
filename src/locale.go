@@ -41,6 +41,13 @@ func getLocalizedMessage(messageID string) string {
 	return localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: messageID})
 }
 
+func getLocalizedTemplateMessage(messageID string, templateData map[string]interface{}) string {
+	return localizer.MustLocalize(&i18n.LocalizeConfig{
+		MessageID:    messageID,
+		TemplateData: templateData,
+	})
+}
+
 func getLocale() map[string]interface{} {
 	return map[string]interface{}{
 		"ButtonSave":  getLocalizedMessage("button_save"),

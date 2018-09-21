@@ -562,14 +562,21 @@ func mgWebhookHandler(c *gin.Context) {
 	switch msg.Type {
 	case "message_sent":
 		var mb string
-		if msg.Data.Type == v1.MsgTypeProduct {
+		switch msg.Data.Type {
+		case v1.MsgTypeProduct:
 			mb = fmt.Sprintf("%s\n", msg.Data.Product.Name)
 
 			if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
 				mb += fmt.Sprintf(
-					"\n%v %s\n",
-					msg.Data.Product.Cost.Value,
-					currency[strings.ToLower(msg.Data.Product.Cost.Currency)],
+					"\n%s: %s",
+					getLocalizedMessage("item_cost"),
+					getLocalizedTemplateMessage(
+						"cost_currency",
+						map[string]interface{}{
+							"CostValue":    msg.Data.Product.Cost.Value,
+							"CostCurrency": currency[strings.ToLower(msg.Data.Product.Cost.Currency)],
+						},
+					),
 				)
 			}
 
@@ -578,26 +585,9 @@ func mgWebhookHandler(c *gin.Context) {
 			} else {
 				mb += msg.Data.Product.Img
 			}
-		} else if msg.Data.Type == v1.MsgTypeOrder {
-			mb = "Заказ"
-
-			if msg.Data.Order.Number != "" {
-				mb += " " + msg.Data.Order.Number
-			}
-
-			if msg.Data.Order.Date != "" {
-				mb += fmt.Sprintf(" (%s)", msg.Data.Order.Date)
-			}
-
-			mb += "\n"
-			if len(msg.Data.Order.Items) > 0 {
-				for _, v := range msg.Data.Order.Items {
-					mb += fmt.Sprintf("%s %v x %v %s\n", v.Name, v.Quantity.Value, v.Price.Value, currency[strings.ToLower(v.Price.Currency)])
-				}
-			}
-
-			mb += fmt.Sprintf("Сумма: %v %s", msg.Data.Order.Cost.Value, currency[strings.ToLower(msg.Data.Order.Cost.Currency)])
-		} else {
+		case v1.MsgTypeOrder:
+			mb = getOrderMessage(msg.Data.Order)
+		case v1.MsgTypeText:
 			mb = msg.Data.Content
 		}
 
@@ -653,4 +643,101 @@ func mgWebhookHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{})
 
 	}
+}
+
+func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
+	mb := getLocalizedMessage("order")
+
+	if dataOrder.Number != "" {
+		mb += " " + dataOrder.Number
+	}
+
+	if dataOrder.Date != "" {
+		mb += fmt.Sprintf(" (%s)", dataOrder.Date)
+	}
+	mb += "\n"
+	if len(dataOrder.Items) > 0 {
+		mb += "\n"
+		for k, v := range dataOrder.Items {
+			mb += fmt.Sprintf(
+				"%d. %s %v x %s\n",
+				k+1,
+				v.Name,
+				v.Quantity.Value,
+				getLocalizedTemplateMessage(
+					"cost_currency",
+					map[string]interface{}{
+						"Amount":   v.Price.Value,
+						"Currency": currency[strings.ToLower(v.Price.Currency)],
+					},
+				),
+			)
+		}
+	}
+
+	if dataOrder.Delivery != nil {
+		mb += fmt.Sprintf(
+			"\n%s:\n%s; %s",
+			getLocalizedMessage("delivery"),
+			dataOrder.Delivery.Name,
+			getLocalizedTemplateMessage(
+				"cost_currency",
+				map[string]interface{}{
+					"Amount":   dataOrder.Delivery.Amount.Value,
+					"Currency": currency[strings.ToLower(dataOrder.Delivery.Amount.Currency)],
+				},
+			),
+		)
+
+		if dataOrder.Delivery.Address != "" {
+			mb += ";\n" + dataOrder.Delivery.Address
+		}
+
+		mb += "\n"
+	}
+
+	if len(dataOrder.Payments) > 0 {
+		mb += fmt.Sprintf(
+			"\n%s:\n",
+			getLocalizedMessage("payment"),
+		)
+		for _, v := range dataOrder.Payments {
+			mb += fmt.Sprintf(
+				"%s; %s",
+				v.Name,
+				getLocalizedTemplateMessage(
+					"cost_currency",
+					map[string]interface{}{
+						"Amount":   v.Amount.Value,
+						"Currency": currency[strings.ToLower(v.Amount.Currency)],
+					},
+				),
+			)
+
+			if v.Status != nil && v.Status.Name != "" {
+				mb += fmt.Sprintf(
+					" (%s)",
+					v.Status.Name,
+				)
+			}
+
+			mb += "\n"
+		}
+	}
+
+	if dataOrder.Cost != nil && dataOrder.Cost.Value != 0 {
+		mb += fmt.Sprintf(
+			"\n%s: %s",
+			getLocalizedMessage("cost"),
+			getLocalizedTemplateMessage(
+				"cost_currency",
+				map[string]interface{}{
+					"Amount":   dataOrder.Cost.Value,
+					"Currency": currency[strings.ToLower(dataOrder.Cost.Currency)],
+				},
+			),
+		)
+	}
+
+	return mb
 }

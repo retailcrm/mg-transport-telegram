@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/retailcrm/api-client-go/v5"
 )
 
@@ -52,12 +51,14 @@ func getAPIClient(url, key string) (*v5.Client, error, int) {
 	if res := checkCredentials(cr.Credentials); len(res) != 0 {
 		logger.Error(url, status, res)
 		return nil,
-			errors.New(localizer.MustLocalize(&i18n.LocalizeConfig{
-				MessageID: "missing_credentials",
-				TemplateData: map[string]interface{}{
-					"Credentials": strings.Join(res, ", "),
-				},
-			})),
+			errors.New(
+				getLocalizedTemplateMessage(
+					"missing_credentials",
+					map[string]interface{}{
+						"Credentials": strings.Join(res, ", "),
+					},
+				),
+			),
 			http.StatusBadRequest
 	}
 
