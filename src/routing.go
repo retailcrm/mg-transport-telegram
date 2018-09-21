@@ -585,21 +585,12 @@ func mgWebhookHandler(c *gin.Context) {
 	switch msg.Type {
 	case "message_sent":
 		var mb string
-<<<<<<< HEAD
-		if msg.Data.Type == v1.MsgTypeProduct {
-=======
 		switch msg.Data.Type {
 		case v1.MsgTypeProduct:
->>>>>>> master
 			mb = fmt.Sprintf("%s\n", msg.Data.Product.Name)
 
 			if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
 				mb += fmt.Sprintf(
-<<<<<<< HEAD
-					"\n%v %s\n",
-					msg.Data.Product.Cost.Value,
-					currency[strings.ToLower(msg.Data.Product.Cost.Currency)],
-=======
 					"\n%s: %s\n",
 					getLocalizedMessage("item_cost"),
 					getLocalizedTemplateMessage(
@@ -609,7 +600,6 @@ func mgWebhookHandler(c *gin.Context) {
 							"Currency": currency[strings.ToLower(msg.Data.Product.Cost.Currency)],
 						},
 					),
->>>>>>> master
 				)
 			}
 
@@ -617,34 +607,10 @@ func mgWebhookHandler(c *gin.Context) {
 				mb += msg.Data.Product.Url
 			} else {
 				mb += msg.Data.Product.Img
-<<<<<<< HEAD
-			}
-		} else if msg.Data.Type == v1.MsgTypeOrder {
-			mb = "Заказ"
-
-			if msg.Data.Order.Number != "" {
-				mb += " " + msg.Data.Order.Number
-			}
-
-			if msg.Data.Order.Date != "" {
-				mb += fmt.Sprintf(" (%s)", msg.Data.Order.Date)
-			}
-
-			mb += "\n"
-			if len(msg.Data.Order.Items) > 0 {
-				for _, v := range msg.Data.Order.Items {
-					mb += fmt.Sprintf("%s %v x %v %s\n", v.Name, v.Quantity.Value, v.Price.Value, currency[strings.ToLower(v.Price.Currency)])
-				}
-			}
-
-			mb += fmt.Sprintf("Сумма: %v %s", msg.Data.Order.Cost.Value, currency[strings.ToLower(msg.Data.Order.Cost.Currency)])
-		} else {
-=======
 			}
 		case v1.MsgTypeOrder:
 			mb = getOrderMessage(msg.Data.Order)
 		case v1.MsgTypeText:
->>>>>>> master
 			mb = msg.Data.Content
 		}
 
