@@ -53,6 +53,7 @@ func start() {
 func setup() *gin.Engine {
 	loadTranslateFile()
 	setValidation()
+	updateChannelsSettings()
 
 	if config.Debug == false {
 		gin.SetMode(gin.ReleaseMode)

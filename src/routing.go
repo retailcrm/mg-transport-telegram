@@ -58,36 +58,10 @@ func addBotHandler(c *gin.Context) {
 	}
 
 	b.Name = bot.Self.FirstName
-
-	ch := v1.Channel{
-		Type: "telegram",
-		Settings: v1.ChannelSettings{
-			SpamAllowed: false,
-			Status: v1.Status{
-				Delivered: v1.ChannelFeatureSend,
-				Read:      v1.ChannelFeatureNone,
-			},
-			Text: v1.ChannelSettingsText{
-				Creating: v1.ChannelFeatureBoth,
-				Editing:  v1.ChannelFeatureBoth,
-				Quoting:  v1.ChannelFeatureBoth,
-				Deleting: v1.ChannelFeatureReceive,
-			},
-			Product: v1.Product{
-				Creating: v1.ChannelFeatureReceive,
-				Editing:  v1.ChannelFeatureReceive,
-			},
-			Order: v1.Order{
-				Creating: v1.ChannelFeatureReceive,
-				Editing:  v1.ChannelFeatureReceive,
-			},
-		},
-	}
-
 	conn := getConnectionById(b.ConnectionID)
+	client := v1.New(conn.MGURL, conn.MGToken)
 
-	var client = v1.New(conn.MGURL, conn.MGToken)
-	data, status, err := client.ActivateTransportChannel(ch)
+	data, status, err := client.ActivateTransportChannel(getChannelSettings())
 	if status != http.StatusCreated {
 		c.AbortWithStatusJSON(BadRequest("error_activating_channel"))
 		logger.Error(conn.APIURL, status, err.Error(), data)
@@ -303,6 +277,98 @@ func getIntegrationModule(clientId string) v5.IntegrationModule {
 			},
 		},
 	}
+}
+
+func getChannelSettings(cid ...uint64) v1.Channel {
+	var channelID uint64
+
+	if len(cid) > 0 {
+		channelID = cid[0]
+	}
+
+	return v1.Channel{
+		ID:   channelID,
+		Type: Type,
+		Settings: v1.ChannelSettings{
+			SpamAllowed: false,
+			Status: v1.Status{
+				Delivered: v1.ChannelFeatureSend,
+				Read:      v1.ChannelFeatureNone,
+			},
+			Text: v1.ChannelSettingsText{
+				Creating: v1.ChannelFeatureBoth,
+				Editing:  v1.ChannelFeatureBoth,
+				Quoting:  v1.ChannelFeatureBoth,
+				Deleting: v1.ChannelFeatureReceive,
+			},
+			Product: v1.Product{
+				Creating: v1.ChannelFeatureReceive,
+				Editing:  v1.ChannelFeatureReceive,
+			},
+			Order: v1.Order{
+				Creating: v1.ChannelFeatureReceive,
+				Editing:  v1.ChannelFeatureReceive,
+			},
+		},
+	}
+}
+
+func updateChannelsSettings() {
+	hashSettings, err := getChannelSettingsHash()
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+
+	connections := getConnections()
+	if len(connections) > 0 {
+		for _, conn := range connections {
+			if !conn.Active {
+				logger.Infof(
+					"updateChannelsSettings connection %s deactivated",
+					conn.APIURL,
+				)
+				continue
+			}
+			updateBots(conn, hashSettings)
+		}
+	}
+
+	return
+}
+
+func updateBots(conn *Connection, hashSettings string) {
+	bots := conn.getBotsByClientID()
+	if len(bots) > 0 {
+		client := v1.New(conn.MGURL, conn.MGToken)
+		for _, bot := range bots {
+			if bot.ChannelSettingsHash == hashSettings {
+				continue
+			}
+
+			data, status, err := client.UpdateTransportChannel(getChannelSettings(bot.Channel))
+			if config.Debug {
+				logger.Infof(
+					"updateChannelsSettings apiURL: %s, ChannelID: %d, Data: %v, Status: %d, err: %v",
+					conn.APIURL, bot.Channel, data, status, err,
+				)
+			}
+
+			if err == nil {
+				bot.ChannelSettingsHash = hashSettings
+				err = bot.save()
+				if err != nil {
+					logger.Error(
+						"updateChannelsSettings bot.save apiURL: %s, bot.Channel: %d , err: %v",
+						conn.APIURL, bot.Channel, err,
+					)
+				}
+			}
+
+		}
+	}
+
+	return
 }
 
 func telegramWebhookHandler(c *gin.Context) {

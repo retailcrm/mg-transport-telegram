@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/sha1"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -116,6 +118,16 @@ func UploadUserAvatar(url string) (picURLs3 string, err error) {
 	}
 
 	picURLs3 = result.Location
+
+	return
+}
+
+func getChannelSettingsHash() (hash string, err error) {
+	res, err := json.Marshal(getChannelSettings())
+
+	h := sha1.New()
+	h.Write(res)
+	hash = fmt.Sprintf("%x", h.Sum(nil))
 
 	return
 }
