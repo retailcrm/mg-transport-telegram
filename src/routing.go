@@ -57,11 +57,16 @@ func addBotHandler(c *gin.Context) {
 		return
 	}
 
-	b.Name = bot.Self.FirstName
+	b.Name = bot.Self.UserName
 	conn := getConnectionById(b.ConnectionID)
 	client := v1.New(conn.MGURL, conn.MGToken)
 
-	data, status, err := client.ActivateTransportChannel(getChannelSettings())
+	channelSettings := getChannelSettings()
+	if b.Name != "" {
+		channelSettings.Name = "@" + b.Name
+	}
+
+	data, status, err := client.ActivateTransportChannel(channelSettings)
 	if status != http.StatusCreated {
 		c.AbortWithStatusJSON(BadRequest("error_activating_channel"))
 		logger.Error(conn.APIURL, status, err.Error(), data)
@@ -367,7 +372,12 @@ func updateBots(conn *Connection, hashSettings string) {
 				continue
 			}
 
-			data, status, err := client.UpdateTransportChannel(getChannelSettings(bot.Channel))
+			channelSettings := getChannelSettings(bot.Channel)
+			if bot.Name != "" {
+				channelSettings.Name = "@" + bot.Name
+			}
+
+			data, status, err := client.UpdateTransportChannel(channelSettings)
 			if config.Debug {
 				logger.Infof(
 					"updateChannelsSettings apiURL: %s, ChannelID: %d, Data: %v, Status: %d, err: %v",
