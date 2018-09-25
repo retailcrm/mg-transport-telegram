@@ -728,14 +728,12 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 		}
 	}
 
-	if dataOrder.Delivery != nil {
-		if dataOrder.Delivery.Name != "" {
-			mb += fmt.Sprintf(
-				"\n*%s:*\n%s",
-				getLocalizedMessage("delivery"),
-				dataOrder.Delivery.Name,
-			)
-		}
+	if dataOrder.Delivery.Name != "" {
+		mb += fmt.Sprintf(
+			"\n*%s:*\n%s",
+			getLocalizedMessage("delivery"),
+			dataOrder.Delivery.Name,
+		)
 
 		if dataOrder.Delivery.Amount != nil {
 			if val, ok := currency[strings.ToLower(dataOrder.Delivery.Amount.Currency)]; ok && dataOrder.Delivery.Amount.Value != 0 {
