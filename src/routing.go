@@ -145,7 +145,7 @@ func saveHandler(c *gin.Context) {
 		if code == http.StatusInternalServerError {
 			c.Error(err)
 		} else {
-			c.AbortWithStatusJSON(BadRequest(err.Error()))
+			c.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 		}
 		return
 	}
@@ -728,21 +728,23 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 		}
 	}
 
-	if dataOrder.Delivery.Name != "" {
-		mb += fmt.Sprintf(
-			"\n*%s:*\n%s",
-			getLocalizedMessage("delivery"),
-			dataOrder.Delivery.Name,
-		)
+	if dataOrder.Delivery != nil {
+		if dataOrder.Delivery.Name != "" {
+			mb += fmt.Sprintf(
+				"\n*%s:*\n%s",
+				getLocalizedMessage("delivery"),
+				dataOrder.Delivery.Name,
+			)
+		}
 
-		if dataOrder.Delivery.Amount != nil {
-			if val, ok := currency[strings.ToLower(dataOrder.Delivery.Amount.Currency)]; ok && dataOrder.Delivery.Amount.Value != 0 {
+		if dataOrder.Delivery.Price != nil {
+			if val, ok := currency[strings.ToLower(dataOrder.Delivery.Price.Currency)]; ok && dataOrder.Delivery.Price.Value != 0 {
 				mb += fmt.Sprintf(
 					"; %s",
 					getLocalizedTemplateMessage(
 						"cost_currency",
 						map[string]interface{}{
-							"Amount":   dataOrder.Delivery.Amount.Value,
+							"Amount":   dataOrder.Delivery.Price.Value,
 							"Currency": val,
 						},
 					),
