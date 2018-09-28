@@ -122,7 +122,9 @@ function send(url, data, callback) {
                 M.toast({
                     html: res.responseJSON.error,
                     displayLength: 1000,
-                    completeCallback: enableForm()
+                    completeCallback: function(){
+                        enableForm()
+                    }
                 })
             }
         }
@@ -203,7 +205,7 @@ $( document ).ready(function() {
 function disableForm(elem) {
     $(document).find('button.btn').addClass('disabled');
     elem.find(".material-icons").addClass('animate');
-    $("form :input").find(":input").prop("disabled", true);
+    $("form :input").prop("disabled", true);
 }
 
 function enableForm() {
