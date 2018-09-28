@@ -35,6 +35,7 @@ func GenerateToken() string {
 
 func getAPIClient(url, key string) (*v5.Client, error, int) {
 	client := v5.New(url, key)
+	client.Debug = config.Debug
 
 	cr, status, e := client.APICredentials()
 	if e.RuntimeErr != nil {
