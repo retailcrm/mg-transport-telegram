@@ -59,8 +59,8 @@ func setup() *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	r := gin.Default()
-
+	r := gin.New()
+	r.Use(gin.Recovery())
 	if config.Debug {
 		r.Use(gin.Logger())
 	}

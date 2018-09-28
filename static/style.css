@@ -137,3 +137,14 @@ main {
 .footer-copyright p {
     color: #9e9e9e;
 }
+
+.animate {
+    transition: all 0.5s ease;
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(360deg);
+    }
+}
