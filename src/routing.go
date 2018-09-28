@@ -57,11 +57,17 @@ func addBotHandler(c *gin.Context) {
 		return
 	}
 
-	b.Name = bot.Self.FirstName
+	b.Name = bot.Self.UserName
 	conn := getConnectionById(b.ConnectionID)
 	client := v1.New(conn.MGURL, conn.MGToken)
+	client.Debug = config.Debug
 
-	data, status, err := client.ActivateTransportChannel(getChannelSettings())
+	channelSettings := getChannelSettings()
+	if b.Name != "" {
+		channelSettings.Name = "@" + b.Name
+	}
+
+	data, status, err := client.ActivateTransportChannel(channelSettings)
 	if status != http.StatusCreated {
 		c.AbortWithStatusJSON(BadRequest("error_activating_channel"))
 		logger.Error(conn.APIURL, status, err.Error(), data)
@@ -88,6 +94,7 @@ func deleteBotHandler(c *gin.Context) {
 	}
 
 	var client = v1.New(conn.MGURL, conn.MGToken)
+	client.Debug = config.Debug
 
 	data, status, err := client.DeactivateTransportChannel(getBotChannelByToken(b.Token))
 	if status > http.StatusOK {
@@ -140,7 +147,7 @@ func saveHandler(c *gin.Context) {
 		if code == http.StatusInternalServerError {
 			c.Error(err)
 		} else {
-			c.AbortWithStatusJSON(BadRequest(err.Error()))
+			c.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
 		}
 		return
 	}
@@ -362,12 +369,18 @@ func updateBots(conn *Connection, hashSettings string) {
 	bots := conn.getBotsByClientID()
 	if len(bots) > 0 {
 		client := v1.New(conn.MGURL, conn.MGToken)
+		client.Debug = config.Debug
 		for _, bot := range bots {
 			if bot.ChannelSettingsHash == hashSettings {
 				continue
 			}
 
-			data, status, err := client.UpdateTransportChannel(getChannelSettings(bot.Channel))
+			channelSettings := getChannelSettings(bot.Channel)
+			if bot.Name != "" {
+				channelSettings.Name = "@" + bot.Name
+			}
+
+			data, status, err := client.UpdateTransportChannel(channelSettings)
 			if config.Debug {
 				logger.Infof(
 					"updateChannelsSettings apiURL: %s, ChannelID: %d, Data: %v, Status: %d, err: %v",
@@ -422,6 +435,7 @@ func telegramWebhookHandler(c *gin.Context) {
 	}
 
 	var client = v1.New(conn.MGURL, conn.MGToken)
+	client.Debug = config.Debug
 
 	if update.Message != nil {
 		if update.Message.Text == "" {
@@ -580,6 +594,7 @@ func mgWebhookHandler(c *gin.Context) {
 		return
 	}
 
+	bot.Debug = config.Debug
 	setLocale(b.Lang)
 
 	switch msg.Type {
@@ -587,7 +602,7 @@ func mgWebhookHandler(c *gin.Context) {
 		var mb string
 		switch msg.Data.Type {
 		case v1.MsgTypeProduct:
-			mb = fmt.Sprintf("%s\n", msg.Data.Product.Name)
+			mb = fmt.Sprintf("*%s*\n", msg.Data.Product.Name)
 
 			if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
 				mb += fmt.Sprintf(
@@ -623,6 +638,8 @@ func mgWebhookHandler(c *gin.Context) {
 			}
 			m.ReplyToMessageID = qid
 		}
+
+		m.ParseMode = "Markdown"
 
 		msgSend, err := bot.Send(m)
 		if err != nil {
@@ -669,7 +686,7 @@ func mgWebhookHandler(c *gin.Context) {
 }
 
 func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
-	mb := getLocalizedMessage("order")
+	mb := "*" + getLocalizedMessage("order")
 
 	if dataOrder.Number != "" {
 		mb += " " + dataOrder.Number
@@ -678,7 +695,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 	if dataOrder.Date != "" {
 		mb += fmt.Sprintf(" (%s)", dataOrder.Date)
 	}
-	mb += "\n"
+	mb += "*\n"
 	if len(dataOrder.Items) > 0 {
 		mb += "\n"
 		for k, v := range dataOrder.Items {
@@ -691,7 +708,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 			if v.Quantity != nil {
 				if v.Quantity.Value != 0 {
 					mb += fmt.Sprintf(
-						" %v",
+						" _%v_",
 						v.Quantity.Value,
 					)
 				}
@@ -700,7 +717,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 			if v.Price != nil {
 				if val, ok := currency[strings.ToLower(v.Price.Currency)]; ok {
 					mb += fmt.Sprintf(
-						" x %s\n",
+						" _x %s_\n",
 						getLocalizedTemplateMessage(
 							"cost_currency",
 							map[string]interface{}{
@@ -719,20 +736,20 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 	if dataOrder.Delivery != nil {
 		if dataOrder.Delivery.Name != "" {
 			mb += fmt.Sprintf(
-				"\n%s:\n%s",
+				"\n*%s:*\n%s",
 				getLocalizedMessage("delivery"),
 				dataOrder.Delivery.Name,
 			)
 		}
 
-		if dataOrder.Delivery.Amount != nil {
-			if val, ok := currency[strings.ToLower(dataOrder.Delivery.Amount.Currency)]; ok && dataOrder.Delivery.Amount.Value != 0 {
+		if dataOrder.Delivery.Price != nil {
+			if val, ok := currency[strings.ToLower(dataOrder.Delivery.Price.Currency)]; ok && dataOrder.Delivery.Price.Value != 0 {
 				mb += fmt.Sprintf(
 					"; %s",
 					getLocalizedTemplateMessage(
 						"cost_currency",
 						map[string]interface{}{
-							"Amount":   dataOrder.Delivery.Amount.Value,
+							"Amount":   dataOrder.Delivery.Price.Value,
 							"Currency": val,
 						},
 					),
@@ -749,7 +766,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 
 	if len(dataOrder.Payments) > 0 {
 		mb += fmt.Sprintf(
-			"\n%s:\n",
+			"\n*%s:*\n",
 			getLocalizedMessage("payment"),
 		)
 		for _, v := range dataOrder.Payments {

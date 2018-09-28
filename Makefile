@@ -23,6 +23,7 @@ jenkins_test: migrate_test
 	@echo "==> Running tests (result in test-report.xml)"
 	@go get -v -u github.com/jstemmer/go-junit-report
 	@go test ./... -v -cpu 2 -race | /go/bin/go-junit-report -set-exit-code > ./test-report.xml
+	@go mod tidy
 
 fmt:
 	@echo "==> Running gofmt"

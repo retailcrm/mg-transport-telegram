@@ -58,6 +58,7 @@ func TestRouting_addBotHandler(t *testing.T) {
 
 	ch := v1.Channel{
 		Type: "telegram",
+		Name: "@TestBot",
 		Settings: v1.ChannelSettings{
 			SpamAllowed: false,
 			Status: v1.Status{
