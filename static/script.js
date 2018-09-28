@@ -13,9 +13,11 @@ $(document).on("change", "select", function(e) {
 
 $('#save-crm').on("submit", function(e) {
     e.preventDefault();
+    let formData = formDataToObj($(this).serializeArray());
+    disableForm($(this));
     send(
         $(this).attr('action'),
-        formDataToObj($(this).serializeArray()),
+        formData,
         function (data) {
             sessionStorage.setItem("createdMsg", data.message);
 
@@ -28,17 +30,26 @@ $('#save-crm').on("submit", function(e) {
 
 $("#save").on("submit", function(e) {
     e.preventDefault();
+    let formData = formDataToObj($(this).serializeArray());
+    disableForm($(this));
     send(
         $(this).attr('action'),
-        formDataToObj($(this).serializeArray()),
+        formData,
         function (data) {
-            M.toast({html: data.message});
+            M.toast({
+                html: data.message,
+                displayLength: 1000,
+                completeCallback: function(){
+                    enableForm();
+                }
+            });
         }
     )
 });
 
 $("#add-bot").on("submit", function(e) {
     e.preventDefault();
+    disableForm($(this));
     send(
         $(this).attr('action'),
         {
@@ -53,6 +64,7 @@ $("#add-bot").on("submit", function(e) {
             $("#bots tbody").append(getBotTemplate(data));
             $("#token").val("");
             $('select').formSelect();
+            enableForm();
         }
     )
 });
@@ -61,6 +73,7 @@ $(document).on("click", ".delete-bot", function(e) {
     e.preventDefault();
     var but = $(this);
     var confirmText = JSON.parse(sessionStorage.getItem("confirmText"));
+    but.addClass('disabled');
 
     $.confirm({
         title: false,
@@ -90,6 +103,9 @@ $(document).on("click", ".delete-bot", function(e) {
             },
             cancel: {
                 text: confirmText["cancel"],
+                action: function () {
+                    but.removeClass('disabled');
+                },
             },
         }
     });
@@ -103,14 +119,17 @@ function send(url, data, callback) {
         success: callback,
         error: function (res){
             if (res.status >= 400) {
-                M.toast({html: res.responseJSON.error})
+                M.toast({
+                    html: res.responseJSON.error,
+                    displayLength: 1000,
+                    completeCallback: enableForm()
+                })
             }
         }
     });
 }
 
 function getBotTemplate(data) {
-    // let bot = JSON.parse(data);
     tmpl =
         `<tr>
             <td>${data.name}</td>
@@ -180,3 +199,15 @@ $( document ).ready(function() {
         }, 1000);
     }
 });
+
+function disableForm(elem) {
+    $(document).find('button.btn').addClass('disabled');
+    elem.find(".material-icons").addClass('animate');
+    $("form :input").find(":input").prop("disabled", true);
+}
+
+function enableForm() {
+    $(document).find('button.btn').removeClass('disabled');
+    $(document).find(".material-icons").removeClass('animate');
+    $("form :input").prop("disabled", false);
+}

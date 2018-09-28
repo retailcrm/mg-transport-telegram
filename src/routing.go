@@ -60,6 +60,7 @@ func addBotHandler(c *gin.Context) {
 	b.Name = bot.Self.UserName
 	conn := getConnectionById(b.ConnectionID)
 	client := v1.New(conn.MGURL, conn.MGToken)
+	client.Debug = config.Debug
 
 	channelSettings := getChannelSettings()
 	if b.Name != "" {
@@ -93,6 +94,7 @@ func deleteBotHandler(c *gin.Context) {
 	}
 
 	var client = v1.New(conn.MGURL, conn.MGToken)
+	client.Debug = config.Debug
 
 	data, status, err := client.DeactivateTransportChannel(getBotChannelByToken(b.Token))
 	if status > http.StatusOK {
@@ -367,6 +369,7 @@ func updateBots(conn *Connection, hashSettings string) {
 	bots := conn.getBotsByClientID()
 	if len(bots) > 0 {
 		client := v1.New(conn.MGURL, conn.MGToken)
+		client.Debug = config.Debug
 		for _, bot := range bots {
 			if bot.ChannelSettingsHash == hashSettings {
 				continue
@@ -432,6 +435,7 @@ func telegramWebhookHandler(c *gin.Context) {
 	}
 
 	var client = v1.New(conn.MGURL, conn.MGToken)
+	client.Debug = config.Debug
 
 	if update.Message != nil {
 		if update.Message.Text == "" {
@@ -590,6 +594,7 @@ func mgWebhookHandler(c *gin.Context) {
 		return
 	}
 
+	bot.Debug = config.Debug
 	setLocale(b.Lang)
 
 	switch msg.Type {
