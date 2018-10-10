@@ -50,6 +50,7 @@ func getLocalizedTemplateMessage(messageID string, templateData map[string]inter
 
 func getLocale() map[string]interface{} {
 	return map[string]interface{}{
+		"Version":     config.Version,
 		"ButtonSave":  getLocalizedMessage("button_save"),
 		"ApiKey":      getLocalizedMessage("api_key"),
 		"TabSettings": getLocalizedMessage("tab_settings"),

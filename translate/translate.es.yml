@@ -4,6 +4,7 @@ tab_bots: Bots
 table_name: Nombre
 table_token: Token
 table_activity: Marca de Actividad
+table_delete: Delete
 api_key: API key
 add_bot: Añadir un bot
 title: Múdulo de conexión de Telegram a retailCRM
