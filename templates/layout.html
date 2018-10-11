@@ -6,7 +6,7 @@
         <link rel="stylesheet" href="/static/font.css" >
         <link rel="stylesheet" href="/static/jquery-confirm.min.css">
         <link rel="stylesheet" href="/static/materialize.min.css">
-        <link rel="stylesheet" href="/static/style.css" >
+        <link rel="stylesheet" href="/static/style.css?{{.Locale.Version}}" >
     </head>
     <body>
         <main>
@@ -32,6 +32,6 @@
     <script src="/static/jquery-3.3.1.min.js"></script>
     <script src="/static/materialize.min.js"></script>
     <script src="/static/jquery-confirm.min.js"></script>
-    <script src="/static/script.js"></script>
+    <script src="/static/script.js?{{.Locale.Version}}"></script>
     </body>
 </html>
