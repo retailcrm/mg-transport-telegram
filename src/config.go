@@ -10,6 +10,7 @@ import (
 
 // TransportConfig struct
 type TransportConfig struct {
+	Version        string           `yaml:"version"`
 	LogLevel       logging.Level    `yaml:"log_level"`
 	Database       DatabaseConfig   `yaml:"database"`
 	SentryDSN      string           `yaml:"sentry_dsn"`

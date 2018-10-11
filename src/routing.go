@@ -431,7 +431,10 @@ func telegramWebhookHandler(c *gin.Context) {
 	}
 
 	if config.Debug {
-		logger.Debugf("mgWebhookHandler request: %v", update)
+		logger.Debugf(
+			"mgWebhookHandler request:\nUpdateID: %v,\nMessage: %+v,\nEditedMessage: %+v",
+			update.UpdateID, update.Message, update.EditedMessage,
+		)
 	}
 
 	var client = v1.New(conn.MGURL, conn.MGToken)
@@ -486,7 +489,7 @@ func telegramWebhookHandler(c *gin.Context) {
 		}
 
 		if config.Debug {
-			logger.Debugf("telegramWebhookHandler user %v", user)
+			logger.Debugf("telegramWebhookHandler user %+v", user)
 		}
 
 		snd := v1.SendData{
@@ -519,7 +522,7 @@ func telegramWebhookHandler(c *gin.Context) {
 		}
 
 		if config.Debug {
-			logger.Debugf("telegramWebhookHandler Type: SendMessage, Bot: %v, Message: %v, Response: %v", b.ID, snd, data)
+			logger.Debugf("telegramWebhookHandler Type: SendMessage, Bot: %v, Message: %+v, Response: %+v", b.ID, snd, data)
 		}
 	}
 
@@ -575,7 +578,7 @@ func mgWebhookHandler(c *gin.Context) {
 	}
 
 	if config.Debug {
-		logger.Debugf("mgWebhookHandler request: %v", msg)
+		logger.Debugf("mgWebhookHandler request: %+v", msg)
 	}
 
 	uid, _ := strconv.Atoi(msg.Data.ExternalMessageID)
@@ -649,7 +652,7 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler sent %v", msgSend)
+			logger.Debugf("mgWebhookHandler sent %+v", msgSend)
 		}
 
 		c.JSON(http.StatusOK, gin.H{"external_message_id": strconv.Itoa(msgSend.MessageID)})
@@ -663,7 +666,7 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler update %v", msgSend)
+			logger.Debugf("mgWebhookHandler update %+v", msgSend)
 		}
 
 		c.AbortWithStatus(http.StatusOK)
@@ -677,7 +680,7 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		if config.Debug {
-			logger.Debugf("mgWebhookHandler delete %v", msgSend)
+			logger.Debugf("mgWebhookHandler delete %+v", msgSend)
 		}
 
 		c.JSON(http.StatusOK, gin.H{})
