@@ -1,3 +1,5 @@
+version: ~
+
 database:
   connection: postgres://mg_telegram_test:mg_telegram_test@postgres_test:5432/mg_telegram_test?sslmode=disable
 
