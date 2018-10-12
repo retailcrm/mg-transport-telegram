@@ -406,17 +406,7 @@ func updateBots(conn *Connection, hashSettings string) {
 }
 
 func telegramWebhookHandler(c *gin.Context) {
-	token := c.Param("token")
-	b, err := getBotByToken(token)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	if b.ID == 0 {
-		c.AbortWithStatus(http.StatusOK)
-		return
-	}
+	b := c.MustGet("bot").(Bot)
 
 	conn := getConnectionById(b.ConnectionID)
 	if !conn.Active {
@@ -559,17 +549,7 @@ func telegramWebhookHandler(c *gin.Context) {
 }
 
 func mgWebhookHandler(c *gin.Context) {
-	clientID := c.GetHeader("Clientid")
-	if clientID == "" {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	conn := getConnection(clientID)
-	if !conn.Active {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
+	conn := c.MustGet("connection").(Connection)
 
 	var msg v1.WebhookRequest
 	if err := c.ShouldBindJSON(&msg); err != nil {

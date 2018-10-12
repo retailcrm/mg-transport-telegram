@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -92,8 +93,8 @@ func setup() *gin.Engine {
 	r.POST("/delete-bot/", checkBotForRequest(), deleteBotHandler)
 	r.POST("/set-lang/", checkBotForRequest(), setLangBotHandler)
 	r.POST("/actions/activity", activityHandler)
-	r.POST("/telegram/:token", telegramWebhookHandler)
-	r.POST("/webhook/", mgWebhookHandler)
+	r.POST("/telegram/:token", checkBotForWebhook(), telegramWebhookHandler)
+	r.POST("/webhook/", checkConnectionForWebhook(), mgWebhookHandler)
 
 	return r
 }
@@ -145,5 +146,42 @@ func checkConnectionForRequest() gin.HandlerFunc {
 
 		conn.APIURL = rx.ReplaceAllString(conn.APIURL, ``)
 		c.Set("connection", conn)
+	}
+}
+
+func checkConnectionForWebhook() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		clientID := c.GetHeader("Clientid")
+		if clientID == "" {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		conn := getConnection(clientID)
+		if !conn.Active {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		c.Set("connection", *conn)
+	}
+}
+
+func checkBotForWebhook() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Param("token")
+
+		b, err := getBotByToken(token)
+		if err != nil {
+			c.Error(err)
+			return
+		}
+
+		if b.ID == 0 {
+			c.AbortWithStatus(http.StatusOK)
+			return
+		}
+
+		c.Set("bot", *b)
 	}
 }
