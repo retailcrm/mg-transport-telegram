@@ -187,6 +187,12 @@ func createHandler(c *gin.Context) {
 		return
 	}
 
+	if status == http.StatusPaymentRequired {
+		c.AbortWithStatusJSON(BadRequest("error_payment_mg"))
+		logger.Error(conn.APIURL, status, errr.ApiErr, data)
+		return
+	}
+
 	if status >= http.StatusBadRequest {
 		c.AbortWithStatusJSON(BadRequest("error_activity_mg"))
 		logger.Error(conn.APIURL, status, errr.ApiErr, data)
