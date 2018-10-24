@@ -67,6 +67,30 @@ func ErrorCaptureHandler(client *raven.Client, errorsStacktrace bool) ErrorHandl
 			"endpoint": c.Request.RequestURI,
 		}
 
+		var (
+			ok   bool
+			conn Connection
+		)
+
+		connection, ok := c.Get("connection")
+		if ok {
+			conn = connection.(Connection)
+		}
+
+		b, ok := c.Get("bot")
+		if ok {
+			tags["bot"] = b.(Bot).Token
+			conn = *getConnectionById(b.(Bot).ConnectionID)
+		}
+
+		if conn.APIURL != "" {
+			tags["crm"] = conn.APIURL
+		}
+
+		if conn.ClientID != "" {
+			tags["clientID"] = conn.ClientID
+		}
+
 		if recovery != nil {
 			stacktrace := raven.NewStacktrace(4, 3, nil)
 			recStr := fmt.Sprint(recovery)
