@@ -27,6 +27,7 @@ incorrect_token: Установите корректный токен
 error_creating_webhook: Ошибка при создании webhook
 error_adding_bot: Ошибка при добавлении бота
 error_save: Ошибка при сохранении, обратитесь в службу технической поддержки
+error_payment_mg: На Вашем счете недостаточно средств для активации данного модуля
 missing_credentials: "Необходимые методы: {{.Credentials}}"
 error_activity_mg: Проверьте активность интеграции с retailCRM Chat в настройках retailCRM
 info_bot: "Если у вас возникли трудности при подключении бота, изучите, пожалуйста, <a target='_blank' href='//www.retailcrm.ru/docs/Users/Telegram'>документацию</a>"
