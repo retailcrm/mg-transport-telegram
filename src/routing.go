@@ -591,7 +591,7 @@ func mgWebhookHandler(c *gin.Context) {
 		var mb string
 		switch msg.Data.Type {
 		case v1.MsgTypeProduct:
-			mb = fmt.Sprintf("*%s*\n", msg.Data.Product.Name)
+			mb = fmt.Sprintf("*%s*\n", replaceMarkdownSymbols(msg.Data.Product.Name))
 
 			if msg.Data.Product.Cost != nil && msg.Data.Product.Cost.Value != 0 {
 				mb += fmt.Sprintf(
@@ -608,9 +608,9 @@ func mgWebhookHandler(c *gin.Context) {
 			}
 
 			if msg.Data.Product.Url != "" {
-				mb += msg.Data.Product.Url
+				mb += replaceMarkdownSymbols(msg.Data.Product.Url)
 			} else {
-				mb += msg.Data.Product.Img
+				mb += replaceMarkdownSymbols(msg.Data.Product.Img)
 			}
 		case v1.MsgTypeOrder:
 			mb = getOrderMessage(msg.Data.Order)
@@ -678,7 +678,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 	mb := "*" + getLocalizedMessage("order")
 
 	if dataOrder.Number != "" {
-		mb += " " + dataOrder.Number
+		mb += " " + replaceMarkdownSymbols(dataOrder.Number)
 	}
 
 	if dataOrder.Date != "" {
@@ -691,7 +691,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 			mb += fmt.Sprintf(
 				"%d. %s",
 				k+1,
-				v.Name,
+				replaceMarkdownSymbols(v.Name),
 			)
 
 			if v.Quantity != nil {
@@ -727,7 +727,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 			mb += fmt.Sprintf(
 				"\n*%s:*\n%s",
 				getLocalizedMessage("delivery"),
-				dataOrder.Delivery.Name,
+				replaceMarkdownSymbols(dataOrder.Delivery.Name),
 			)
 		}
 
@@ -747,7 +747,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 		}
 
 		if dataOrder.Delivery.Address != "" {
-			mb += ";\n" + dataOrder.Delivery.Address
+			mb += ";\n" + replaceMarkdownSymbols(dataOrder.Delivery.Address)
 		}
 
 		mb += "\n"
@@ -759,7 +759,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 			getLocalizedMessage("payment"),
 		)
 		for _, v := range dataOrder.Payments {
-			mb += v.Name
+			mb += replaceMarkdownSymbols(v.Name)
 
 			if v.Amount != nil {
 				if val, ok := currency[strings.ToLower(v.Amount.Currency)]; ok && v.Amount.Value != 0 {
@@ -779,7 +779,7 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 			if v.Status != nil && v.Status.Name != "" {
 				mb += fmt.Sprintf(
 					" (%s)",
-					v.Status.Name,
+					replaceMarkdownSymbols(v.Status.Name),
 				)
 			}
 
