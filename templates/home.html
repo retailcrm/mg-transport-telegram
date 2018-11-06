@@ -4,13 +4,13 @@
             <div id="msg"></div>
             <div class="row">
                 <div class="input-field col s12">
-                    <input placeholder="CRM Url" id="api_url" name="api_url" type="text" class="validate"
+                    <input placeholder="CRM Url" id="api_url" name="api_url" type="text" class="validate" maxlength="255"
                         {{if .Conn.APIURL}} value="{{.Conn.APIURL}}" {{end}}>
                 </div>
             </div>
             <div class="row">
                 <div class="input-field col s12">
-                    <input placeholder="{{.Locale.ApiKey}}" id="api_key" name="api_key" type="text" class="validate">
+                    <input placeholder="{{.Locale.ApiKey}}" id="api_key" name="api_key" type="text" class="validate" maxlength="100">
                 </div>
             </div>
             <div class="row">
