@@ -24,6 +24,7 @@ var (
 		"/api/integration-modules/{code}",
 		"/api/integration-modules/{code}/edit",
 	}
+	markdownSymbols = []string{"*", "_", "`", "["}
 )
 
 // GenerateToken function
@@ -132,4 +133,12 @@ func getChannelSettingsHash() (hash string, err error) {
 	hash = fmt.Sprintf("%x", h.Sum(nil))
 
 	return
+}
+
+func replaceMarkdownSymbols(s string) string {
+	for _, v := range markdownSymbols {
+		s = strings.Replace(s, v, "\\"+v, -1)
+	}
+
+	return s
 }
