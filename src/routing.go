@@ -615,7 +615,7 @@ func mgWebhookHandler(c *gin.Context) {
 		case v1.MsgTypeOrder:
 			mb = getOrderMessage(msg.Data.Order)
 		case v1.MsgTypeText:
-			mb = msg.Data.Content
+			mb = replaceMarkdownSymbols(msg.Data.Content)
 		}
 
 		m := tgbotapi.NewMessage(cid, mb)
@@ -644,7 +644,7 @@ func mgWebhookHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"external_message_id": strconv.Itoa(msgSend.MessageID)})
 
 	case "message_updated":
-		msgSend, err := bot.Send(tgbotapi.NewEditMessageText(cid, uid, msg.Data.Content))
+		msgSend, err := bot.Send(tgbotapi.NewEditMessageText(cid, uid, replaceMarkdownSymbols(msg.Data.Content)))
 		if err != nil {
 			logger.Error(err)
 			c.AbortWithStatus(http.StatusBadRequest)
