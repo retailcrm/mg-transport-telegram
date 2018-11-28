@@ -79,6 +79,20 @@ func TestRouting_addBotHandler(t *testing.T) {
 				Creating: v1.ChannelFeatureReceive,
 				Editing:  v1.ChannelFeatureReceive,
 			},
+			File: v1.ChannelSettingsFilesBase{
+				Creating: v1.ChannelFeatureBoth,
+				Editing:  v1.ChannelFeatureBoth,
+				Quoting:  v1.ChannelFeatureBoth,
+				Deleting: v1.ChannelFeatureReceive,
+				Max:      1,
+			},
+			Image: v1.ChannelSettingsFilesBase{
+				Creating: v1.ChannelFeatureBoth,
+				Editing:  v1.ChannelFeatureBoth,
+				Quoting:  v1.ChannelFeatureBoth,
+				Deleting: v1.ChannelFeatureReceive,
+				Max:      10,
+			},
 		},
 	}
 
