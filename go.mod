@@ -18,7 +18,7 @@ require (
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ini/ini v1.38.2 // indirect
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
-	github.com/go-telegram-bot-api/telegram-bot-api v0.0.0-20180602093832-4c16a90966d1
+	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/golang-migrate/migrate v3.4.0+incompatible
 	github.com/golang/protobuf v1.2.0 // indirect
 	github.com/google/go-cmp v0.2.0 // indirect
@@ -45,7 +45,7 @@ require (
 	github.com/pkg/errors v0.8.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/retailcrm/api-client-go v1.1.0
-	github.com/retailcrm/mg-transport-api-client-go v1.1.11
+	github.com/retailcrm/mg-transport-api-client-go v1.1.17
 	github.com/smartystreets/assertions v0.0.0-20180820201707-7c9eb446e3cf // indirect
 	github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a // indirect
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect

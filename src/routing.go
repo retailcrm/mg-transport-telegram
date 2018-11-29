@@ -343,6 +343,20 @@ func getChannelSettings(cid ...uint64) v1.Channel {
 				Creating: v1.ChannelFeatureReceive,
 				Editing:  v1.ChannelFeatureReceive,
 			},
+			File: v1.ChannelSettingsFilesBase{
+				Creating: v1.ChannelFeatureBoth,
+				Editing:  v1.ChannelFeatureBoth,
+				Quoting:  v1.ChannelFeatureBoth,
+				Deleting: v1.ChannelFeatureReceive,
+				Max:      1,
+			},
+			Image: v1.ChannelSettingsFilesBase{
+				Creating: v1.ChannelFeatureBoth,
+				Editing:  v1.ChannelFeatureBoth,
+				Quoting:  v1.ChannelFeatureBoth,
+				Deleting: v1.ChannelFeatureReceive,
+				Max:      10,
+			},
 		},
 	}
 }
@@ -437,11 +451,6 @@ func telegramWebhookHandler(c *gin.Context) {
 	client.Debug = config.Debug
 
 	if update.Message != nil {
-		if update.Message.Text == "" {
-			setLocale(update.Message.From.LanguageCode)
-			update.Message.Text = getLocalizedMessage(getMessageID(update.Message))
-		}
-
 		nickname := update.Message.From.UserName
 		user := getUserByExternalID(update.Message.From.ID)
 
@@ -510,6 +519,17 @@ func telegramWebhookHandler(c *gin.Context) {
 			snd.Quote = &v1.SendMessageRequestQuote{ExternalID: strconv.Itoa(update.Message.ReplyToMessage.MessageID)}
 		}
 
+		if snd.Message.Text == "" {
+			setLocale(update.Message.From.LanguageCode)
+
+			err := setAttachment(update.Message, client, &snd, b.Token)
+			if err != nil {
+				logger.Error(client.Token, err.Error())
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+		}
+
 		data, st, err := client.Messages(snd)
 		if err != nil {
 			logger.Error(b.Token, err.Error(), st, data)
@@ -528,13 +548,10 @@ func telegramWebhookHandler(c *gin.Context) {
 			update.EditedMessage.Text = getLocalizedMessage(getMessageID(update.Message))
 		}
 
-		snd := v1.UpdateData{
-			Message: v1.UpdateMessage{
-				Message: v1.Message{
-					ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
-					Type:       "text",
-					Text:       update.EditedMessage.Text,
-				},
+		snd := v1.EditMessageRequest{
+			Message: v1.EditMessageRequestMessage{
+				ExternalID: strconv.Itoa(update.EditedMessage.MessageID),
+				Text:       update.EditedMessage.Text,
 			},
 			Channel: b.Channel,
 		}
@@ -585,10 +602,13 @@ func mgWebhookHandler(c *gin.Context) {
 
 	bot.Debug = config.Debug
 	setLocale(b.Lang)
+	mgClient := v1.New(conn.MGURL, conn.MGToken)
 
 	switch msg.Type {
 	case "message_sent":
 		var mb string
+		var m tgbotapi.Chattable
+
 		switch msg.Data.Type {
 		case v1.MsgTypeProduct:
 			mb = fmt.Sprintf("*%s*\n", replaceMarkdownSymbols(msg.Data.Product.Name))
@@ -616,19 +636,36 @@ func mgWebhookHandler(c *gin.Context) {
 			mb = getOrderMessage(msg.Data.Order)
 		case v1.MsgTypeText:
 			mb = replaceMarkdownSymbols(msg.Data.Content)
+		case v1.MsgTypeImage:
+			m, err = photoMessage(*msg.Data.Items, mgClient, cid)
+			if err != nil {
+				logger.Errorf(
+					"GetFile request apiURL: %s, clientID: %s, err: %s",
+					conn.APIURL, conn.ClientID, err.Error(),
+				)
+				return
+			}
+		case v1.MsgTypeFile:
+			items := *msg.Data.Items
+			if len(items) > 0 {
+				m, err = documentMessage(items[0], mgClient, cid)
+				if err != nil {
+					logger.Errorf(
+						"GetFile request apiURL: %s, clientID: %s, err: %s",
+						conn.APIURL, conn.ClientID, err.Error(),
+					)
+					return
+				}
+			}
 		}
 
-		m := tgbotapi.NewMessage(cid, mb)
-		if msg.Data.QuoteExternalID != "" {
-			qid, err := strconv.Atoi(msg.Data.QuoteExternalID)
+		if mb != "" {
+			m, err = textMessage(cid, mb, msg.Data.QuoteExternalID)
 			if err != nil {
 				c.Error(err)
 				return
 			}
-			m.ReplyToMessageID = qid
 		}
-
-		m.ParseMode = "Markdown"
 
 		msgSend, err := bot.Send(m)
 		if err != nil {
@@ -804,4 +841,156 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 	}
 
 	return mb
+}
+
+func photoMessage(items []v1.FileItem, mgClient *v1.MgClient, cid int64) (chattable tgbotapi.Chattable, err error) {
+	if len(items) == 1 {
+		v := items
+
+		file, _, err := mgClient.GetFile(v[0].ID)
+		if err != nil {
+			return chattable, err
+		}
+
+		msg := tgbotapi.NewPhotoUpload(cid, nil)
+		msg.FileID = file.Url
+		msg.UseExisting = true
+
+		chattable = msg
+	} else if len(items) > 1 {
+		var it []interface{}
+
+		for _, v := range items {
+			file, _, err := mgClient.GetFile(v.ID)
+			if err != nil {
+				logger.Errorf(
+					"GetFile request fileID: %s, err: %s",
+					v.ID, err.Error(),
+				)
+				continue
+			}
+
+			ip := tgbotapi.NewInputMediaPhoto(file.Url)
+			it = append(it, ip)
+		}
+
+		chattable = tgbotapi.NewMediaGroup(cid, it)
+	}
+
+	return
+}
+
+func documentMessage(item v1.FileItem, mgClient *v1.MgClient, cid int64) (chattable tgbotapi.Chattable, err error) {
+	file, _, err := mgClient.GetFile(item.ID)
+	if err != nil {
+		return chattable, err
+	}
+
+	data, err := http.Get(file.Url)
+	if err != nil {
+		return chattable, err
+	}
+
+	tt := tgbotapi.FileReader{
+		Name:   item.Caption,
+		Reader: data.Body,
+		Size:   int64(item.Size),
+	}
+
+	chattable = tgbotapi.NewDocumentUpload(cid, tt)
+	return
+}
+
+func textMessage(cid int64, mb string, quoteExternalID string) (chattable tgbotapi.Chattable, err error) {
+	var qid int
+	m := tgbotapi.NewMessage(cid, mb)
+
+	if quoteExternalID != "" {
+		qid, err = strconv.Atoi(quoteExternalID)
+		if err != nil {
+			return
+		}
+		m.ReplyToMessageID = qid
+	}
+
+	m.ParseMode = "Markdown"
+
+	chattable = m
+	return
+}
+
+func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.SendData, botToken string) error {
+	var (
+		items   []v1.Item
+		fileID  string
+		caption string
+	)
+
+	t := getMessageID(attachments)
+	bot, err := tgbotapi.NewBotAPI(botToken)
+	if err != nil {
+		return err
+	}
+
+	switch t {
+	case "photo":
+		for _, v := range *attachments.Photo {
+			fileID = v.FileID
+		}
+
+		snd.Message.Type = v1.MsgTypeImage
+		caption = getLocalizedMessage(t)
+	case "document":
+		fileID = attachments.Document.FileID
+		snd.Message.Type = v1.MsgTypeFile
+		caption = attachments.Document.FileName
+	default:
+		snd.Message.Text = getLocalizedMessage(t)
+	}
+
+	if fileID != "" {
+		file, err := getFileURL(fileID, bot)
+		if err != nil {
+			return err
+		}
+
+		item, _, err := getItemData(
+			client,
+			fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", botToken, file.FilePath),
+			caption,
+		)
+		if err != nil {
+			return err
+		}
+
+		items = append(items, item)
+	}
+
+	if len(items) > 0 {
+		snd.Message.Items = items
+	}
+
+	return nil
+}
+
+func getItemData(client *v1.MgClient, url string, caption string) (v1.Item, int, error) {
+	item := v1.Item{}
+
+	data, st, err := client.UploadFileByURL(
+		v1.UploadFileByUrlRequest{
+			Url: url,
+		},
+	)
+	if err != nil {
+		return item, st, err
+	}
+
+	item.ID = data.ID
+	item.Caption = caption
+
+	return item, st, err
+}
+
+func getFileURL(fileID string, b *tgbotapi.BotAPI) (tgbotapi.File, error) {
+	return b.GetFile(tgbotapi.FileConfig{FileID: fileID})
 }
