@@ -944,6 +944,10 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 		fileID = attachments.Document.FileID
 		snd.Message.Type = v1.MsgTypeFile
 		caption = attachments.Document.FileName
+	case "sticker":
+		fileID = attachments.Sticker.FileID
+		snd.Message.Type = v1.MsgTypeImage
+		caption = getLocalizedMessage(t)
 	default:
 		snd.Message.Text = getLocalizedMessage(t)
 	}
