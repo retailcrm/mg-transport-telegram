@@ -15,6 +15,7 @@ type Options struct {
 }
 
 const Type = "telegram"
+const MaxCharsCount = 4096
 
 var (
 	config   *TransportConfig
