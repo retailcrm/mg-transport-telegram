@@ -66,10 +66,11 @@ func TestRouting_addBotHandler(t *testing.T) {
 				Read:      v1.ChannelFeatureNone,
 			},
 			Text: v1.ChannelSettingsText{
-				Creating: v1.ChannelFeatureBoth,
-				Editing:  v1.ChannelFeatureBoth,
-				Quoting:  v1.ChannelFeatureBoth,
-				Deleting: v1.ChannelFeatureReceive,
+				Creating:      v1.ChannelFeatureBoth,
+				Editing:       v1.ChannelFeatureBoth,
+				Quoting:       v1.ChannelFeatureBoth,
+				Deleting:      v1.ChannelFeatureReceive,
+				MaxCharsCount: MaxCharsCount,
 			},
 			Product: v1.Product{
 				Creating: v1.ChannelFeatureReceive,
