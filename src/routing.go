@@ -75,6 +75,14 @@ func addBotHandler(c *gin.Context) {
 	}
 
 	b.Channel = data.ChannelID
+	b.Lang = "en"
+
+	hashSettings, err := getChannelSettingsHash()
+	if err != nil {
+		logger.Errorf("addBotHandler hashSettings apiURl: %s, err: %s", conn.APIURL, err.Error())
+	} else {
+		b.ChannelSettingsHash = hashSettings
+	}
 
 	err = conn.createBot(b)
 	if err != nil {
@@ -251,6 +259,13 @@ func activityHandler(c *gin.Context) {
 
 	if systemUrl != "" {
 		conn.APIURL = systemUrl
+	}
+
+	hashSettings, err := getChannelSettingsHash()
+	if err != nil {
+		logger.Errorf("activityHandler hashSettings apiURl: %s, err: %s", conn.APIURL, err.Error())
+	} else {
+		updateBots(conn, hashSettings)
 	}
 
 	if err := conn.saveConnection(); err != nil {

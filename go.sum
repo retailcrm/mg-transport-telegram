@@ -95,8 +95,6 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/retailcrm/api-client-go v1.1.0 h1:APPO6ccJAeMV7Jz7BhrtDKSOm2r1j5Ft6fuEXNP2ij4=
 github.com/retailcrm/api-client-go v1.1.0/go.mod h1:QRoPE2SM6ST7i2g0yEdqm7Iw98y7cYuq3q14Ot+6N8c=
-github.com/retailcrm/mg-transport-api-client-go v1.1.17 h1:8L0meFJFZwr3TyiF/xypI+g0xRXIGkWhyQ6qiCfojqw=
-github.com/retailcrm/mg-transport-api-client-go v1.1.17/go.mod h1:AWV6BueE28/6SCoyfKURTo4lF0oXYoOKmHTzehd5vAI=
 github.com/retailcrm/mg-transport-api-client-go v1.1.18 h1:V59Ai79N1jrS1kAnQggNoRYsoAdr2RUV7Hf0xbw9r9Q=
 github.com/retailcrm/mg-transport-api-client-go v1.1.18/go.mod h1:AWV6BueE28/6SCoyfKURTo4lF0oXYoOKmHTzehd5vAI=
 github.com/smartystreets/assertions v0.0.0-20180820201707-7c9eb446e3cf h1:6V1qxN6Usn4jy8unvggSJz/NC790tefw8Zdy6OZS5co=
