@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"image/png"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +14,7 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/retailcrm/api-client-go/v5"
 	"github.com/retailcrm/mg-transport-api-client-go/v1"
+	"golang.org/x/image/webp"
 )
 
 func connectHandler(c *gin.Context) {
@@ -974,13 +977,25 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 			return err
 		}
 
-		item, _, err := getItemData(
-			client,
-			fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", botToken, file.FilePath),
-			caption,
-		)
-		if err != nil {
-			return err
+		item := v1.Item{}
+		fileUrl := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", botToken, file.FilePath)
+		if t != "sticker" {
+			item, _, err = getItemData(
+				client,
+				fileUrl,
+				caption,
+			)
+			if err != nil {
+				return err
+			}
+		} else {
+			item, err = convertAndUploadImage(
+				client,
+				fileUrl,
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		items = append(items, item)
@@ -1013,4 +1028,37 @@ func getItemData(client *v1.MgClient, url string, caption string) (v1.Item, int,
 
 func getFileURL(fileID string, b *tgbotapi.BotAPI) (tgbotapi.File, error) {
 	return b.GetFile(tgbotapi.FileConfig{FileID: fileID})
+}
+
+func convertAndUploadImage(client *v1.MgClient, url string) (v1.Item, error) {
+	item := v1.Item{}
+
+	res, err := http.Get(url)
+	if err != nil {
+		return item, err
+	}
+
+	img, err := webp.Decode(res.Body)
+	if err != nil {
+		return item, err
+	}
+
+	pReader, pWriter := io.Pipe()
+
+	go func() {
+		defer pWriter.Close()
+		err = png.Encode(pWriter, img)
+		if err != nil {
+			logger.Info(item, err.Error())
+		}
+	}()
+
+	data, _, err := client.UploadFile(pReader)
+	if err != nil {
+		return item, err
+	}
+
+	item.ID = data.ID
+
+	return item, nil
 }
