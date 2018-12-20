@@ -13,12 +13,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/h2non/gock"
-	"github.com/retailcrm/mg-transport-api-client-go/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var router *gin.Engine
+var ch = getChannelSettings()
 
 func init() {
 	os.Chdir("../")
@@ -56,48 +56,9 @@ func TestRouting_connectHandler(t *testing.T) {
 func TestRouting_addBotHandler(t *testing.T) {
 	defer gock.Off()
 
-	ch := v1.Channel{
-		Type: "telegram",
-		Name: "@TestBot",
-		Settings: v1.ChannelSettings{
-			SpamAllowed: false,
-			Status: v1.Status{
-				Delivered: v1.ChannelFeatureSend,
-				Read:      v1.ChannelFeatureNone,
-			},
-			Text: v1.ChannelSettingsText{
-				Creating:      v1.ChannelFeatureBoth,
-				Editing:       v1.ChannelFeatureBoth,
-				Quoting:       v1.ChannelFeatureBoth,
-				Deleting:      v1.ChannelFeatureReceive,
-				MaxCharsCount: MaxCharsCount,
-			},
-			Product: v1.Product{
-				Creating: v1.ChannelFeatureReceive,
-				Editing:  v1.ChannelFeatureReceive,
-			},
-			Order: v1.Order{
-				Creating: v1.ChannelFeatureReceive,
-				Editing:  v1.ChannelFeatureReceive,
-			},
-			File: v1.ChannelSettingsFilesBase{
-				Creating: v1.ChannelFeatureBoth,
-				Editing:  v1.ChannelFeatureBoth,
-				Quoting:  v1.ChannelFeatureBoth,
-				Deleting: v1.ChannelFeatureReceive,
-				Max:      1,
-			},
-			Image: v1.ChannelSettingsFilesBase{
-				Creating: v1.ChannelFeatureBoth,
-				Editing:  v1.ChannelFeatureBoth,
-				Quoting:  v1.ChannelFeatureBoth,
-				Deleting: v1.ChannelFeatureReceive,
-				Max:      10,
-			},
-		},
-	}
+	ch.Name = "@TestBot"
 
-	outgoing, _ := json.Marshal(&ch)
+	outgoing, _ := json.Marshal(ch)
 	p := url.Values{"url": {"https://" + config.HTTPServer.Host + "/telegram/123123:Qwerty"}}
 
 	gock.New("https://api.telegram.org").
