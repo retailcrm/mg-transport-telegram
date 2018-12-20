@@ -552,7 +552,13 @@ func telegramWebhookHandler(c *gin.Context) {
 		data, st, err := client.Messages(snd)
 		if err != nil {
 			logger.Error(b.Token, err.Error(), st, data)
-			c.Error(err)
+
+			if update.Message.ReplyToMessage != nil {
+				c.AbortWithStatus(http.StatusOK)
+			} else {
+				c.Error(err)
+			}
+
 			return
 		}
 
