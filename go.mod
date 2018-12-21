@@ -42,7 +42,7 @@ require (
 	github.com/pkg/errors v0.8.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/retailcrm/api-client-go v1.1.0
-	github.com/retailcrm/mg-transport-api-client-go v1.1.18
+	github.com/retailcrm/mg-transport-api-client-go v1.1.21
 	github.com/smartystreets/assertions v0.0.0-20180820201707-7c9eb446e3cf // indirect
 	github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a // indirect
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
@@ -50,6 +50,7 @@ require (
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/ugorji/go v1.1.1 // indirect
 	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b // indirect
+	golang.org/x/image v0.0.0-20181116024801-cd38e8056d9b
 	golang.org/x/net v0.0.0-20180911220305-26e67e76b6c3 // indirect
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
 	golang.org/x/sys v0.0.0-20180909124046-d0be0721c37e // indirect
