@@ -99,7 +99,16 @@ func getConnectionById(id int) *Connection {
 }
 
 func (u *User) save() error {
-	return orm.DB.Save(u).Error
+	return orm.DB.Exec(
+		"INSERT INTO mg_user (external_id, user_photo_url, user_photo_id) "+
+			"VALUES (?, ?, ?) "+
+			"ON CONFLICT (external_id) DO UPDATE SET "+
+			"user_photo_url = excluded.user_photo_url, user_photo_id=excluded.user_photo_id, updated_at= ?",
+		u.ExternalID,
+		u.UserPhotoURL,
+		u.UserPhotoID,
+		time.Now(),
+	).Error
 }
 
 func getUserByExternalID(eid int) *User {
