@@ -35,7 +35,7 @@ pipeline {
 
         stage('Docker Images') {
             when {
-                branch 'release'
+                branch 'master'
             }
             steps {
                 withCredentials([usernamePassword(
