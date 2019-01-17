@@ -89,6 +89,8 @@ func addBotHandler(c *gin.Context) {
 
 	err = conn.createBot(b)
 	if err != nil {
+		client.DeactivateTransportChannel(data.ChannelID)
+
 		c.Error(err)
 		return
 	}
@@ -405,11 +407,14 @@ func updateChannelsSettings() {
 }
 
 func updateBots(conn *Connection, hashSettings string) {
+	var channelIDs []uint64
 	bots := conn.getBotsByClientID()
+
 	if len(bots) > 0 {
 		client := v1.New(conn.MGURL, conn.MGToken)
 		client.Debug = config.Debug
 		for _, bot := range bots {
+			channelIDs = append(channelIDs, bot.Channel)
 			if bot.ChannelSettingsHash == hashSettings {
 				continue
 			}
@@ -437,11 +442,49 @@ func updateBots(conn *Connection, hashSettings string) {
 					)
 				}
 			}
-
 		}
+
+		deactivationChannels(client, channelIDs)
 	}
 
 	return
+}
+
+func deactivationChannels(client *v1.MgClient, channelIDs []uint64) {
+	channelListItems, status, err := client.TransportChannels(v1.Channels{Active: true})
+	if config.Debug {
+		logger.Debugf(
+			"TransportChannels ChannelListItems: %+v, Status: %d, err: %v",
+			channelListItems, status, err,
+		)
+	}
+
+	if len(channelListItems) > 0 {
+		for _, channel := range channelIDs {
+			for key, ch := range channelListItems {
+				if channel == ch.ID {
+					if len(channelListItems) == 1 {
+						channelListItems = channelListItems[:0]
+						break
+					}
+
+					channelListItems = append(channelListItems[:key], channelListItems[key+1:]...)
+				}
+			}
+		}
+	}
+
+	if len(channelListItems) > 0 {
+		for _, ch := range channelListItems {
+			channelListItems, status, err := client.DeactivateTransportChannel(ch.ID)
+			if config.Debug {
+				logger.Debugf(
+					"DeactivateTransportChannel  ChannelListItems: %+v, Status: %d, err: %v",
+					channelListItems, status, err,
+				)
+			}
+		}
+	}
 }
 
 func telegramWebhookHandler(c *gin.Context) {
