@@ -444,13 +444,13 @@ func updateBots(conn *Connection, hashSettings string) {
 			}
 		}
 
-		deactivationChannels(client, channelIDs)
+		deactivateChannels(client, channelIDs)
 	}
 
 	return
 }
 
-func deactivationChannels(client *v1.MgClient, channelIDs []uint64) {
+func deactivateChannels(client *v1.MgClient, channelIDs []uint64) {
 	channelListItems, status, err := client.TransportChannels(v1.Channels{Active: true})
 	if config.Debug {
 		logger.Debugf(
