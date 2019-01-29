@@ -923,6 +923,7 @@ func photoMessage(items []v1.FileItem, mgClient *v1.MgClient, cid int64) (chatta
 		msg := tgbotapi.NewPhotoUpload(cid, nil)
 		msg.FileID = file.Url
 		msg.UseExisting = true
+		msg.Caption = v[0].Caption
 
 		chattable = msg
 	} else if len(items) > 1 {
@@ -939,6 +940,7 @@ func photoMessage(items []v1.FileItem, mgClient *v1.MgClient, cid int64) (chatta
 			}
 
 			ip := tgbotapi.NewInputMediaPhoto(file.Url)
+			ip.Caption = v.Caption
 			it = append(it, ip)
 		}
 
@@ -1007,7 +1009,7 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 		}
 
 		snd.Message.Type = v1.MsgTypeImage
-		caption = getLocalizedMessage(t)
+		caption = attachments.Caption
 	case "document":
 		fileID = attachments.Document.FileID
 		snd.Message.Type = v1.MsgTypeFile
@@ -1015,7 +1017,7 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 	case "sticker":
 		fileID = attachments.Sticker.FileID
 		snd.Message.Type = v1.MsgTypeImage
-		caption = getLocalizedMessage(t)
+		caption = attachments.Caption
 	default:
 		snd.Message.Text = getLocalizedMessage(t)
 	}
