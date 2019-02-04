@@ -44,8 +44,8 @@ require (
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.8.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/retailcrm/api-client-go v1.1.0
-	github.com/retailcrm/mg-transport-api-client-go v1.1.24
+	github.com/retailcrm/api-client-go v1.1.1
+	github.com/retailcrm/mg-transport-api-client-go v1.1.26
 	github.com/smartystreets/assertions v0.0.0-20180820201707-7c9eb446e3cf // indirect
 	github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a // indirect
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
