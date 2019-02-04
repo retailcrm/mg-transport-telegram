@@ -565,6 +565,7 @@ func telegramWebhookHandler(c *gin.Context) {
 				Type:       "text",
 				Text:       update.Message.Text,
 			},
+			Originator: "user",
 			User: v1.User{
 				ExternalID: strconv.Itoa(update.Message.From.ID),
 				Nickname:   nickname,
