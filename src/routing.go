@@ -705,7 +705,7 @@ func mgWebhookHandler(c *gin.Context) {
 		case v1.MsgTypeText:
 			mb = replaceMarkdownSymbols(msg.Data.Content)
 		case v1.MsgTypeImage:
-			m, err = photoMessage(*msg.Data.Items, mgClient, cid)
+			m, err = photoMessage(msg.Data, mgClient, cid)
 			if err != nil {
 				logger.Errorf(
 					"GetFile request apiURL: %s, clientID: %s, err: %s",
@@ -911,7 +911,9 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 	return mb
 }
 
-func photoMessage(items []v1.FileItem, mgClient *v1.MgClient, cid int64) (chattable tgbotapi.Chattable, err error) {
+func photoMessage(webhookData v1.WebhookData, mgClient *v1.MgClient, cid int64) (chattable tgbotapi.Chattable, err error) {
+	items := *webhookData.Items
+
 	if len(items) == 1 {
 		v := items
 
@@ -923,7 +925,7 @@ func photoMessage(items []v1.FileItem, mgClient *v1.MgClient, cid int64) (chatta
 		msg := tgbotapi.NewPhotoUpload(cid, nil)
 		msg.FileID = file.Url
 		msg.UseExisting = true
-		msg.Caption = v[0].Caption
+		msg.Caption = webhookData.Content
 
 		chattable = msg
 	} else if len(items) > 1 {
@@ -940,7 +942,7 @@ func photoMessage(items []v1.FileItem, mgClient *v1.MgClient, cid int64) (chatta
 			}
 
 			ip := tgbotapi.NewInputMediaPhoto(file.Url)
-			ip.Caption = v.Caption
+			ip.Caption = webhookData.Content
 			it = append(it, ip)
 		}
 
@@ -991,9 +993,8 @@ func textMessage(cid int64, mb string, quoteExternalID string) (chattable tgbota
 
 func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.SendData, botToken string) error {
 	var (
-		items   []v1.Item
-		fileID  string
-		caption string
+		items  []v1.Item
+		fileID string
 	)
 
 	t := getMessageID(attachments)
@@ -1002,6 +1003,8 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 		return err
 	}
 
+	caption := getLocalizedMessage(t)
+
 	switch t {
 	case "photo":
 		for _, v := range *attachments.Photo {
@@ -1009,7 +1012,6 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 		}
 
 		snd.Message.Type = v1.MsgTypeImage
-		caption = attachments.Caption
 	case "document":
 		fileID = attachments.Document.FileID
 		snd.Message.Type = v1.MsgTypeFile
@@ -1017,7 +1019,6 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 	case "sticker":
 		fileID = attachments.Sticker.FileID
 		snd.Message.Type = v1.MsgTypeImage
-		caption = attachments.Caption
 	default:
 		snd.Message.Text = getLocalizedMessage(t)
 	}
@@ -1054,6 +1055,7 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 
 	if len(items) > 0 {
 		snd.Message.Items = items
+		snd.Message.Text = attachments.Caption
 	}
 
 	return nil
