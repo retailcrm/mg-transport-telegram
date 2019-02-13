@@ -11,13 +11,13 @@ services:
             - ${POSTGRES_ADDRESS:-127.0.0.1:5434}:${POSTGRES_PORT:-5432}
 
     mg_telegram_test:
-        image: golang:1.11.3-stretch
+        image: golang:1.11-stretch
         working_dir: /mgtg
         user: ${UID:-1000}:${GID:-1000}
         environment:
             GOCACHE: /go
         volumes:
-            - ./:/mgtg/
+            - ./:/mgtg
             - ./static:/static/
         links:
             - postgres_test
