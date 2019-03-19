@@ -565,8 +565,8 @@ func telegramWebhookHandler(c *gin.Context) {
 				Type:       "text",
 				Text:       update.Message.Text,
 			},
-			Originator: "user",
-			User: v1.User{
+			Originator: v1.OriginatorCustomer,
+			Customer: v1.Customer{
 				ExternalID: strconv.Itoa(update.Message.From.ID),
 				Nickname:   nickname,
 				Firstname:  update.Message.From.FirstName,
@@ -776,7 +776,6 @@ func mgWebhookHandler(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{})
-
 	}
 }
 
@@ -1013,6 +1012,7 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 		}
 
 		snd.Message.Type = v1.MsgTypeImage
+		snd.Message.Note = attachments.Caption
 	case "document":
 		fileID = attachments.Document.FileID
 		snd.Message.Type = v1.MsgTypeFile
