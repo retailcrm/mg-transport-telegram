@@ -30,9 +30,9 @@ error_save: Ошибка при сохранении, обратитесь в с
 error_payment_mg: На Вашем счете недостаточно средств для активации данного модуля
 missing_credentials: "Необходимые методы: {{.Credentials}}"
 error_activity_mg: Проверьте активность интеграции с retailCRM Chat в настройках retailCRM
-info_bot: "Если у вас возникли трудности при подключении бота, изучите, пожалуйста, <a target='_blank' href='//www.retailcrm.ru/docs/Users/Telegram'>документацию</a>"
+info_bot: "Если у вас возникли трудности при подключении бота, изучите, пожалуйста, <a target='_blank' href='https://help.retailcrm.ru/Users/Telegram'>документацию</a>"
 crm_link: "<a href='//www.retailcrm.ru' title='retailCRM'>retailCRM</a>"
-doc_link: "<a href='//www.retailcrm.ru/docs' target='_blank'>документация</a>"
+doc_link: "<a href='https://help.retailcrm.ru/' target='_blank'>документация</a>"
 
 sticker: "[стикер]"
 audio: "[аудио файл]"
