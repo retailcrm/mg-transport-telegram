@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/retailcrm/api-client-go/v5"
-	"github.com/retailcrm/mg-transport-api-client-go/v1"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	v5 "github.com/retailcrm/api-client-go/v5"
+	v1 "github.com/retailcrm/mg-transport-api-client-go/v1"
 	"golang.org/x/image/webp"
 )
 
@@ -613,6 +613,15 @@ func telegramWebhookHandler(c *gin.Context) {
 
 	if update.EditedMessage != nil {
 		if update.EditedMessage.Text == "" {
+			if getMessageID(update.EditedMessage) != "undefined" {
+				if config.Debug {
+					logger.Debug(b.Token, update.EditedMessage, "Only text messages can be updated")
+				}
+				c.JSON(http.StatusOK, gin.H{})
+
+				return
+			}
+
 			setLocale(update.EditedMessage.From.LanguageCode)
 			update.EditedMessage.Text = getLocalizedMessage(getMessageID(update.Message))
 		}
