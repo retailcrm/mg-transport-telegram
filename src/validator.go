@@ -8,7 +8,7 @@ import (
 	"gopkg.in/go-playground/validator.v8"
 )
 
-var regCommandName = regexp.MustCompile(`https://?[\da-z.-]+\.(retailcrm\.(ru|pro|es)|ecomlogic\.com|simlachat\.com)`)
+var regCommandName = regexp.MustCompile(`^https://?[\da-z.-]+\.(retailcrm\.(ru|pro|es)|ecomlogic\.com|simlachat\.(com|ru))/?$`)
 
 func setValidation() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
