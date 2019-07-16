@@ -864,6 +864,10 @@ func getOrderMessage(dataOrder *v1.MessageDataOrder) string {
 			mb += ";\n" + replaceMarkdownSymbols(dataOrder.Delivery.Address)
 		}
 
+		if dataOrder.Delivery.Comment != "" {
+			mb += ";\n" + replaceMarkdownSymbols(dataOrder.Delivery.Comment)
+		}
+
 		mb += "\n"
 	}
 
