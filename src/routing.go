@@ -599,6 +599,9 @@ func telegramWebhookHandler(c *gin.Context) {
 
 			if update.Message.ReplyToMessage != nil {
 				c.AbortWithStatus(http.StatusOK)
+			} else if st == http.StatusBadRequest && err.Error() == "Message with passed external_id already exists" {
+				logger.Errorf("Message with externalId '%s' is already exists - ignoring it", snd.Message.ExternalID)
+				c.JSON(http.StatusOK, gin.H{})
 			} else {
 				c.Error(err)
 			}
