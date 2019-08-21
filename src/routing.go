@@ -509,8 +509,16 @@ func telegramWebhookHandler(c *gin.Context) {
 		)
 	}
 
+	bot, err := tgbotapi.NewBotAPI(b.Token)
+	if err != nil {
+		logger.Error(b, err)
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
 	var client = v1.New(conn.MGURL, conn.MGToken)
 	client.Debug = config.Debug
+	bot.Debug = config.Debug
 
 	if update.Message != nil {
 		nickname := update.Message.From.UserName
@@ -585,7 +593,7 @@ func telegramWebhookHandler(c *gin.Context) {
 		if snd.Message.Text == "" {
 			setLocale(update.Message.From.LanguageCode)
 
-			err := setAttachment(update.Message, client, &snd, b.Token)
+			err := setAttachment(bot, update.Message, client, &snd, b.Token)
 			if err != nil {
 				logger.Error(client.Token, err.Error())
 				c.AbortWithStatus(http.StatusBadRequest)
@@ -1007,7 +1015,7 @@ func textMessage(cid int64, mb string, quoteExternalID string) (chattable tgbota
 	return
 }
 
-func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.SendData, botToken string) error {
+func setAttachment(bot *tgbotapi.BotAPI, attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.SendData, botToken string) error {
 	var (
 		items  []v1.Item
 		fileID string
@@ -1036,6 +1044,9 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 	case "sticker":
 		fileID = attachments.Sticker.FileID
 		snd.Message.Type = v1.MsgTypeImage
+	case "voice":
+		fileID = attachments.Voice.FileID
+		snd.Message.Type = v1.MsgTypeAudio
 	default:
 		snd.Message.Text = getLocalizedMessage(t)
 	}
@@ -1048,7 +1059,8 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 
 		item := v1.Item{}
 		fileUrl := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", botToken, file.FilePath)
-		if t != "sticker" {
+		switch {
+		case t == "sticker" || t == "voice":
 			item, _, err = getItemData(
 				client,
 				fileUrl,
@@ -1057,7 +1069,7 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 			if err != nil {
 				return err
 			}
-		} else {
+		default:
 			item, err = convertAndUploadImage(
 				client,
 				fileUrl,
