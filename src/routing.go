@@ -1036,6 +1036,9 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 	case "sticker":
 		fileID = attachments.Sticker.FileID
 		snd.Message.Type = v1.MsgTypeImage
+	case "voice":
+		fileID = attachments.Voice.FileID
+		snd.Message.Type = v1.MsgTypeAudio
 	default:
 		snd.Message.Text = getLocalizedMessage(t)
 	}
@@ -1048,7 +1051,8 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 
 		item := v1.Item{}
 		fileUrl := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", botToken, file.FilePath)
-		if t != "sticker" {
+		switch {
+		case t == "sticker" || t == "voice":
 			item, _, err = getItemData(
 				client,
 				fileUrl,
@@ -1057,7 +1061,7 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 			if err != nil {
 				return err
 			}
-		} else {
+		default:
 			item, err = convertAndUploadImage(
 				client,
 				fileUrl,
