@@ -1029,6 +1029,10 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 
 		snd.Message.Type = v1.MsgTypeImage
 		snd.Message.Note = attachments.Caption
+	case "animation":
+		fileID = attachments.Animation.FileID
+		snd.Message.Type = v1.MsgTypeFile
+		caption += ".mp4"
 	case "document":
 		fileID = attachments.Document.FileID
 		snd.Message.Type = v1.MsgTypeFile
@@ -1052,7 +1056,7 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 		item := v1.Item{}
 		fileUrl := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", botToken, file.FilePath)
 		switch {
-		case t == "sticker" || t == "voice":
+		case t == "sticker" || t == "voice" || t == "animation":
 			item, _, err = getItemData(
 				client,
 				fileUrl,

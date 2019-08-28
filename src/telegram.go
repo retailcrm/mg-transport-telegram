@@ -41,6 +41,8 @@ func getMessageID(data *tgbotapi.Message) string {
 		return "audio"
 	case data.Contact != nil:
 		return "contact"
+	case data.Animation != nil:
+		return "animation"
 	case data.Document != nil:
 		return "document"
 	case data.Location != nil:
