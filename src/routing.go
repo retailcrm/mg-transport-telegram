@@ -1029,6 +1029,10 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 
 		snd.Message.Type = v1.MsgTypeImage
 		snd.Message.Note = attachments.Caption
+	case "animation":
+		fileID = attachments.Animation.FileID
+		snd.Message.Type = v1.MsgTypeFile
+		caption += ".mp4"
 	case "document":
 		fileID = attachments.Document.FileID
 		snd.Message.Type = v1.MsgTypeFile
@@ -1061,6 +1065,17 @@ func setAttachment(attachments *tgbotapi.Message, client *v1.MgClient, snd *v1.S
 			if err != nil {
 				return err
 			}
+		case t == "animation":
+			item, _, err = getItemData(
+				client,
+				fileUrl,
+				caption,
+			)
+			if err != nil {
+				return err
+			}
+
+			item.Caption = item.ID + ".mp4"
 		default:
 			item, err = convertAndUploadImage(
 				client,
