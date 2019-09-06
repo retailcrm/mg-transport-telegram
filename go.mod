@@ -24,6 +24,7 @@ require (
 	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
+	github.com/h2non/filetype v1.0.10
 	github.com/h2non/gock v1.0.10
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jinzhu/gorm v1.9.1

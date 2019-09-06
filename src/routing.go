@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"image/png"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +14,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/h2non/filetype"
+	filetypes "github.com/h2non/filetype/matchers"
 	v5 "github.com/retailcrm/api-client-go/v5"
 	v1 "github.com/retailcrm/mg-transport-api-client-go/v1"
 	"golang.org/x/image/webp"
@@ -1127,27 +1131,43 @@ func convertAndUploadImage(client *v1.MgClient, url string) (v1.Item, error) {
 		return item, err
 	}
 
-	img, err := webp.Decode(res.Body)
+	imgByte, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return item, err
 	}
 
-	pReader, pWriter := io.Pipe()
-
-	go func() {
-		defer pWriter.Close()
-		err = png.Encode(pWriter, img)
+	if kind, err := filetype.Match(imgByte); err != nil {
+		return item, err
+	} else if kind == filetypes.TypeWebp {
+		img, err := webp.Decode(res.Body)
 		if err != nil {
-			logger.Info(item, err.Error())
+			return item, err
 		}
-	}()
 
-	data, _, err := client.UploadFile(pReader)
-	if err != nil {
-		return item, err
+		pReader, pWriter := io.Pipe()
+
+		go func() {
+			defer pWriter.Close()
+			err = png.Encode(pWriter, img)
+			if err != nil {
+				logger.Info(item, err.Error())
+			}
+		}()
+
+		data, _, err := client.UploadFile(pReader)
+		if err != nil {
+			return item, err
+		}
+
+		item.ID = data.ID
+	} else {
+		data, _, err := client.UploadFile(bytes.NewReader(imgByte))
+		if err != nil {
+			return item, err
+		}
+
+		item.ID = data.ID
 	}
-
-	item.ID = data.ID
 
 	return item, nil
 }
