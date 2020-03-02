@@ -119,7 +119,7 @@ func deleteBotHandler(c *gin.Context) {
 		logger.Error(b.ID, status, err.Error(), data)
 		return
 	}
-
+	
 	err = b.deleteBot()
 	if err != nil {
 		c.Error(err)
@@ -511,6 +511,11 @@ func telegramWebhookHandler(c *gin.Context) {
 			"mgWebhookHandler request:\nUpdateID: %v,\nMessage: %+v,\nEditedMessage: %+v",
 			update.UpdateID, update.Message, update.EditedMessage,
 		)
+	}
+
+	if update.Message != nil && shouldMessageBeIgnored(update.Message) {
+		logger.Infof("telegramWebhookHandler ignoring unprocessable message %+v", update.Message)
+		return
 	}
 
 	var client = v1.New(conn.MGURL, conn.MGToken)

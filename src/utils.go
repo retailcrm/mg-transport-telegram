@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/retailcrm/api-client-go/v5"
 )
 
@@ -141,4 +142,18 @@ func replaceMarkdownSymbols(s string) string {
 	}
 
 	return s
+}
+
+// shouldMessageBeIgnored returns true if message should not be processed at all
+func shouldMessageBeIgnored(m *tgbotapi.Message) bool {
+	if m.NewChatMembers != nil ||
+		m.LeftChatMember != nil ||
+		m.NewChatTitle != "" ||
+		m.NewChatPhoto != nil ||
+		m.DeleteChatPhoto ||
+		m.GroupChatCreated {
+		return true
+	}
+
+	return false
 }
