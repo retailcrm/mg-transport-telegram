@@ -150,6 +150,7 @@ func shouldMessageBeIgnored(m *tgbotapi.Message) bool {
 		m.LeftChatMember != nil ||
 		m.NewChatTitle != "" ||
 		m.NewChatPhoto != nil ||
+		m.PinnedMessage != nil ||
 		m.DeleteChatPhoto ||
 		m.GroupChatCreated {
 		return true
