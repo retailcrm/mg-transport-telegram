@@ -22,7 +22,7 @@ var ch = getChannelSettings()
 
 func init() {
 	os.Chdir("../")
-	config = LoadConfig("config_test.yml")
+	config = LoadConfig("config.yml")
 	orm = NewDb(config)
 	logger = newLogger()
 	router = setup()

@@ -5,18 +5,6 @@ CONFIG_FILE=$(ROOT_DIR)/config.yml
 BIN=$(ROOT_DIR)/bin/transport
 REVISION=$(shell git describe --tags 2>/dev/null || git log --format="v0.0-%h" -n 1 || echo "v0.0-unknown")
 
-build: deps fmt
-	@echo "==> Building"
-	@cd $(SRC_DIR) && CGO_ENABLED=0 go build -o $(BIN) -ldflags "-X common.build=${REVISION}" .
-	@echo $(BIN)
-
-run: migrate
-	@echo "==> Running"
-	@${BIN} --config $(CONFIG_FILE) run
-
-test: deps fmt
-	@echo "==> Running tests"
-	@cd $(ROOT_DIR) && go test ./... -v -cpu 2
 fmt:
 	@echo "==> Running gofmt"
 	@gofmt -l -s -w $(ROOT_DIR)
@@ -25,8 +13,22 @@ deps:
 	@echo "==> Installing dependencies"
 	@go mod tidy
 
+build: deps fmt
+	@echo "==> Building"
+	@cd $(SRC_DIR) && CGO_ENABLED=0 go build -o $(BIN) -ldflags "-X common.build=${REVISION}" .
+	@echo $(BIN)
+
 migrate: build
 	${BIN} --config $(CONFIG_FILE) migrate -p $(MIGRATIONS_DIR)
 
 migrate_down: build
 	@${BIN} --config $(CONFIG_FILE) migrate -v down
+
+run: migrate
+	@echo "==> Running"
+	@${BIN} --config $(CONFIG_FILE) run
+
+test: migrate
+	@echo "==> Running tests"
+	@cd $(ROOT_DIR) && go test ./... -v -cpu 2
+

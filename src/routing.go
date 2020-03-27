@@ -119,7 +119,7 @@ func deleteBotHandler(c *gin.Context) {
 		logger.Error(b.ID, status, err.Error(), data)
 		return
 	}
-	
+
 	err = b.deleteBot()
 	if err != nil {
 		c.Error(err)
