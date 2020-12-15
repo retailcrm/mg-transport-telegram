@@ -1,5 +1,5 @@
 button_save: Guardar
-tab_settings: Ajustes retailCRM
+tab_settings: Ajustes RetailCRM
 tab_bots: Bots
 table_name: Nombre
 table_token: Token
@@ -7,7 +7,7 @@ table_activity: Marca de Actividad
 table_delete: Delete
 api_key: API key
 add_bot: Añadir un bot
-title: Múdulo de conexión de Telegram a retailCRM
+title: Múdulo de conexión de Telegram a RetailCRM
 successful: Datos actualizados con éxito
 language: Idioma
 
@@ -23,16 +23,16 @@ error_creating_integration: Error al integrar
 error_creating_connection: Error al establecer la conexión
 connection_already_created: La conexión ya está establecida
 missing_url_key: Faltan la URL y la API key
-incorrect_url: Introduzca URL correcta de retailCRM
+incorrect_url: Introduzca URL correcta de RetailCRM
 incorrect_token: Crear el token correcto
 error_creating_webhook: Error al crear el webhook
 error_adding_bot: Error al añadir el bot
 error_save: Error al guardar, contacte con el soporte técnico
 error_payment_mg: Su cuenta no tiene fondos suficientes para activar el módulo de integración.
 missing_credentials: "Métodos requeridos: {{.Credenciales}}"
-error_activity_mg: Revisar si la integración con retailCRM Chat está habilitada en Ajustes de retailCRM
+error_activity_mg: Revisar si la integración con RetailCRM Chat está habilitada en Ajustes de RetailCRM
 info_bot: "Si tiene dificultades para conectar el bot, por favor, consulte la <a target='_blank' href='https://help.retailcrm.es/Users/Telegram'>documentación</a>"
-crm_link: "<a href='//www.retailcrm.es' title='retailCRM'>retailCRM</a>"
+crm_link: "<a href='//www.retailcrm.es' title='RetailCRM'>RetailCRM</a>"
 doc_link: "<a href='https://help.retailcrm.es/' target='_blank'>documentación</a>"
 
 sticker: "[etiqueta]"

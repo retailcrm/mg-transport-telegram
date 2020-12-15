@@ -1,12 +1,12 @@
 button_save: Сохранить
-tab_settings: Настройки retailCRM
+tab_settings: Настройки RetailCRM
 tab_bots: Боты
 table_name: Имя
 table_token: Токен
 table_delete: Удалить
 api_key: API Ключ
 add_bot: Добавить бота
-title: Модуль подключения Telegram к retailCRM
+title: Модуль подключения Telegram к RetailCRM
 successful: Данные успешно обновлены
 language: Язык
 
@@ -22,16 +22,16 @@ error_creating_integration: Ошибка при создании интегра�
 error_creating_connection: Ошибка при создании соединения
 connection_already_created: Соединение уже создано
 missing_url_key: Отсутствует URL или apiKey
-incorrect_url: Введите корректный URL retailCRM
+incorrect_url: Введите корректный URL RetailCRM
 incorrect_token: Установите корректный токен
 error_creating_webhook: Ошибка при создании webhook
 error_adding_bot: Ошибка при добавлении бота
 error_save: Ошибка при сохранении, обратитесь в службу технической поддержки
 error_payment_mg: На Вашем счете недостаточно средств для активации данного модуля
 missing_credentials: "Необходимые методы: {{.Credentials}}"
-error_activity_mg: Проверьте активность интеграции с retailCRM Chat в настройках retailCRM
+error_activity_mg: Проверьте активность интеграции с RetailCRM Chat в настройках RetailCRM
 info_bot: "Если у вас возникли трудности при подключении бота, изучите, пожалуйста, <a target='_blank' href='https://help.retailcrm.ru/Users/Telegram'>документацию</a>"
-crm_link: "<a href='//www.retailcrm.ru' title='retailCRM'>retailCRM</a>"
+crm_link: "<a href='//www.retailcrm.ru' title='RetailCRM'>RetailCRM</a>"
 doc_link: "<a href='https://help.retailcrm.ru/' target='_blank'>документация</a>"
 
 sticker: "[стикер]"
